@@ -1,0 +1,20 @@
+{
+  "name": "filiatron",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5517 --strictPort",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 5518 --strictPort",
+    "postinstall": "node scripts/prepare-assets.mjs"
+  },
+  "dependencies": {
+    "@gutenye/ocr-browser": "^1.4.8",
+    "@gutenye/ocr-models": "^1.4.2",
+    "@huggingface/transformers": "^3.8.1"
+  },
+  "devDependencies": {
+    "vite": "^6.2.0"
+  }
+}

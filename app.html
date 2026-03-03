@@ -1,0 +1,3147 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0"/>
+  <meta http-equiv="Pragma" content="no-cache"/>
+  <meta http-equiv="Expires" content="0"/>
+  <title>FILIATRON</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230b1220'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-size='30' fill='%23e6eefc' font-family='Arial'%3EF%3C/text%3E%3C/svg%3E">
+  <meta name="theme-color" content="#0b1220">
+
+  <style>
+      :root{
+      --bg:#0b1220; --fg:#e6eefc; --accent:#0979f1;
+      --card:rgba(255,255,255,.08); --border:rgba(255,255,255,.18);
+      --green:#22c57b; --red:#ff5656;
+      /* ↓↓↓ NUEVO: control del brillo del título ↓↓↓ */
+      --title-glow: 0.35;        /* 0–1: intensidad del brillo */
+      --title-glow-size: 18px;  /* tamaño del halo (px) */
+    }
+    
+    *{box-sizing:border-box}
+    body{
+      margin:0;padding:20px;
+      font-family:system-ui,"Segoe UI",Arial;
+      color:var(--fg);
+      /* Fondo con imagen (se gestiona con pseudo-elementos para asegurar visibilidad) */
+      background:none;
+      min-height:100dvh;
+    }
+    /* Capa de foto de fondo asegurada */
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      background:url('./verde.jpg') center / cover no-repeat;
+      z-index:-2;
+      transform:translateZ(0); /* fuerza pintar y evita glitches de backdrop-filter */
+    }
+    /* Velo oscuro encima de la foto (controla visibilidad del fondo) */
+    body::after{
+      content:"";
+      position:fixed;
+      inset:0;
+      background:linear-gradient(180deg, rgba(11,18,32,.85), rgba(11,18,32,.010));
+      z-index:-1;
+      pointer-events:none;
+    }
+    h1{
+  margin:0 0 14px;
+  font-size:32px;
+  line-height:1.1;
+  letter-spacing:.6px;
+  font-weight:800;
+  background:linear-gradient(92deg, #e6eefc, #8fc8ff 45%, #197ce5 80%);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+  text-shadow:
+    0 1px 0 rgba(0,0,0,.25),
+    0 0 8px rgba(255,255,255,var(--title-glow)),
+    0 0 18px rgba(255,255,255, calc(var(--title-glow)*0.6));
+  text-align:center;
+  position: relative;
+  isolation: isolate;                   /* aísla el blend del halo */
+  -webkit-text-stroke: .6px rgba(255,255,255,.35);  /* bordes más nítidos */
+  filter: saturate(1.15);               /* refuerza el degradado */
+}
+
+/* Halo que suma luz sin “lavar” el relleno */
+h1::after{
+  content: attr(data-title);
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  color: #ffffff;
+  opacity: calc(var(--title-glow) * 0.85);
+  filter: blur(var(--title-glow-size)) brightness(1.2) saturate(1.3);
+  mix-blend-mode: screen;               /* suma luz respetando el color del texto */
+  pointer-events: none;
+}
+    .grid{display:grid;gap:16px;max-width:1100px;margin:0 auto} /* centrado del layout */
+    .two{grid-template-columns:1fr}
+    @media(min-width:900px){.two{grid-template-columns:1fr 1fr}}
+    .card{
+      background:rgba(11,18,32,.08);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:14px;
+      padding:16px;
+      backdrop-filter:blur(10px);
+      box-shadow:0 4px 14px rgba(0,0,0,.35);
+    }
+    .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;align-items:center}
+    .row.center{justify-content:center}                   /* centrado de botones */
+    .btn{
+      border:none;
+      color:var(--fg);
+      background:transparent;              /* fondo totalmente transparente */
+      padding:10px 14px;
+      border-radius:12px;
+      cursor:pointer;
+      box-shadow:0 0 18px rgba(9,121,241,.85);  /* resplandor azul difuso (no aro) */
+      transition:box-shadow .18s ease, transform .12s ease;
+    }
+    .btn.secondary{
+      border:none;
+      background:transparent;                        /* sin relleno */
+      box-shadow:0 0 16px rgba(255,255,255,.55);    /* resplandor blanco/gris suave */
+    }
+    /* Comparecencia GPT en morado */
+    #gptComparecencia{
+      border:none !important;
+      background:transparent;                           /* sin relleno morado */
+      box-shadow:0 0 20px rgba(138,77,255,.95);        /* resplandor morado difuso */
+    }
+    #gptComparecencia:hover{ box-shadow:0 6px 18px rgba(138,77,255,.25) }
+    #gptComparecencia:focus{ outline:2px solid rgba(138,77,255,.45); outline-offset:2px }
+    /* Botón naranja: agregar filiación */
+    #addFiliacion{
+      border:none !important;
+      background:transparent;                           /* sin relleno naranja */
+      box-shadow:0 0 20px rgba(255,140,26,.95);        /* resplandor naranja difuso */
+    }
+    #addFiliacion:hover{
+      box-shadow:0 0 26px rgba(255,140,26,1);
+      transform:translateY(-1px);
+    }
+    #addFiliacion:focus{ outline:2px solid rgba(255,140,26,.5); outline-offset:2px; }
+
+    /* Escoba en rojo */
+    #clearForm{
+      border:none !important;
+      background:transparent;                           /* sin relleno rojo */
+      box-shadow:0 0 20px rgba(255,86,86,.95);         /* resplandor rojo difuso */
+    }
+    #clearForm:hover{
+      box-shadow:0 0 26px rgba(255,86,86,1);
+      transform:translateY(-1px);
+    }
+    #clearForm:focus{ outline:2px solid rgba(255,86,86,.55); outline-offset:2px; }
+
+    /* Botón cargar cifrado (verde) */
+    #loadEncrypted{
+      border:none !important;
+      background:transparent;                           /* sin relleno verde */
+      box-shadow:0 0 20px rgba(34,197,123,.95);        /* resplandor verde difuso */
+    }
+    #loadEncrypted:hover{ box-shadow:0 6px 18px rgba(34,197,123,.25); }
+    #loadEncrypted:focus{ outline:2px solid rgba(34,197,123,.5); outline-offset:2px; }
+    .fields{display:grid;gap:12px;grid-template-columns:1fr}
+    @media(min-width:760px){.fields{grid-template-columns:1fr 1fr}}
+    label{font-size:12px;margin-bottom:4px;color:#cfe0ff;display:block}
+    input,select,textarea{
+      width:100%;padding:10px;border-radius:12px;background:rgba(10,16,28,.28);
+      color:var(--fg);border:0.5px solid var(--border);outline:none;transition:border-color .15s
+    }
+    textarea{min-height:120px;resize:vertical}
+    input.valid,select.valid{border-color:var(--green)!important}
+    input.invalid,select.invalid{border-color:var(--red)!important}
+    .span2{grid-column:1/-1}
+    .badge{padding:4px 8px;border-radius:9999px;background:rgba(255,255,255,.12);border:1px solid var(--border);font-size:12px}
+    .badge{ box-shadow:0 2px 10px rgba(77,163,255,.12), inset 0 0 0 1px rgba(255,255,255,.05) }
+    .btn:hover{
+      box-shadow:0 0 24px rgba(77,163,255,1);
+      transform:translateY(-1px);
+    }
+    .btn:focus{ outline:2px solid rgba(77,163,255,.45); outline-offset:2px }
+    .grow{flex:1}
+    ul.list{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+    ul.list li{
+      position:relative;
+      border-radius:10px;
+      padding:6px 10px;
+      background:rgba(10,16,28,.75);
+      font-size:12px;
+      border:1px solid transparent; /* el borde visible lo hace el pseudo */
+      overflow:hidden;
+    }
+    ul.list li::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      padding:1px;
+      border-radius:inherit;
+      background:linear-gradient(135deg,#22c55e,#facc15); /* verde → amarillo */
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      -webkit-mask-composite:xor;
+      mask-composite:exclude;
+      pointer-events:none;
+    }
+    ul.list li button{margin-left:8px}
+
+    /* Campo con duda (modo B, borde amarillo) */
+    input.uncertain, select.uncertain, textarea.uncertain{
+      border-color:#ffc107 !important;
+      box-shadow:0 0 0 2px rgba(255,193,7,.18) inset;
+    }
+
+    .ia-badge{
+      position:fixed;
+      top:12px;
+      left:12px;
+      z-index:20;
+      font-size:24px;
+      line-height:1;
+      filter:drop-shadow(0 2px 6px rgba(0,0,0,.45));
+      user-select:none;
+      pointer-events:none;
+    }
+  </style>
+</head>
+<body>
+<div class="ia-badge" title="Version IA">🧠</div>
+<h1 data-title="FILIATRON">FILIATRON</h1>
+
+<div class="grid two">
+  <!-- ACCIONES -->
+  <div class="card">
+    <div class="row center">
+      <button class="btn" id="gptComparecencia" title="Abrir Comparecencia GPT">Comparecencia GPT 🤖</button>
+    </div>
+
+    <div class="row center" style="margin-top:10px">
+      <span class="badge">Filiaciones: <span id="countF">0</span></span>
+      <ul class="list" id="listaF"></ul>
+    </div>
+  </div>
+
+  <!-- COMPARECENCIA + CAMPOS -->
+  <div class="card">
+    <div class="fields">
+      <div class="span2">
+        <!-- Texto 'Comparecencia (DOC)' eliminado -->
+        <div class="row center" style="margin:6px 0 8px 0">
+          <button class="btn" id="integrarDoc">Pegar comparecencia 📋</button>
+        </div>
+        <textarea id="Doc"></textarea>
+        <div class="row center" style="margin:8px 0 6px 0">
+          <button class="btn" id="readAnalyze">Integrar DNI 🪪</button>
+          <button class="btn secondary" id="readAnalyzeBatch">Lote DNI x10</button>
+        </div>
+        <div class="row center" style="margin:0 0 8px 0">
+          <span class="badge" id="ocrStatus">OCR listo para imagen</span>
+          <input type="file" id="dniImageInput" accept="image/*" capture="environment" style="display:none">
+          <input type="file" id="dniBatchInput" accept="image/*" multiple style="display:none">
+        </div>
+      </div>
+
+      <!-- Ficha de filiación actual -->
+      <div><label>Nombre</label><input id="Nombre"></div>
+      <div><label>Apellidos (MAYÚSCULAS)</label><input id="Apellidos"></div>
+      <div><label>Tipo de documento</label><input id="Tipo"></div>
+      <div><label>Nº documento</label><input id="Numero"></div>
+      <div><label>Sexo</label>
+        <select id="Sexo"><option></option><option>MASCULINO</option><option>FEMENINO</option></select>
+      </div>
+      <div><label>Nacionalidad</label><input id="Nacionalidad"></div>
+      <div class="span2"><label>Nombre de los Padres</label><input id="Padres"></div>
+      <div><label>Fecha de nacimiento</label><input id="Nacimiento"></div>
+      <div><label>Lugar de nacimiento</label><input id="Lugar"></div>
+      <div class="span2"><label>Domicilio</label><input id="Domicilio"></div>
+      <div><label>Teléfono</label><input id="Telefono" inputmode="numeric" pattern="[0-9 ]*"></div>
+      <div><label>Condición (oblig.)</label>
+        <select id="Condicion">
+          <option></option><option>Requirente</option><option>Perjudicado</option>
+          <option>Testigo</option><option>Identificado</option>
+        </select>
+      </div>
+
+      <div class="span2"></div>
+      <div class="span2 row center" style="margin-top:6px">
+        <button class="btn" id="addFiliacion">👤 Agregar filiación al expediente</button>
+        <button class="btn secondary broom" id="clearForm" title="Limpiar formulario">🧹</button>
+        <button class="btn" id="download">⬇️ Descargar cifrado 🔐 </button>
+        <button class="btn secondary" id="loadEncrypted">⬆️ Cargar cifrado 🔐 </button>
+        <input type="file" id="encryptedInput" accept=".enc,.txt,.json" style="display:none">
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="./paises_iso3.js"></script>
+<script type="module">
+import Ocr from '@gutenye/ocr-browser';
+import { pipeline, env } from '@huggingface/transformers';
+import { PROVINCIAS_ES } from './provincias_es.js';
+
+const IS_LOCAL_DEV = location.hostname === '127.0.0.1' || location.hostname === 'localhost';
+
+if (!IS_LOCAL_DEV) {
+  const manifestLink = document.createElement('link');
+  manifestLink.rel = 'manifest';
+  manifestLink.href = './manifest.webmanifest?v=dev3';
+  document.head.appendChild(manifestLink);
+}
+
+// ======================================================
+// FILIATRON — PARSER NS (1 sola línea, sin espacios)
+// ======================================================
+
+const expediente = { doc: "", filiaciones: [] };
+
+const textEncoder = new TextEncoder();
+const textDecoder = new TextDecoder();
+const LOCAL_FIELD_MODEL = "semantic-local-lite";
+const ENABLE_HEAVY_LOCAL_AI = false;
+const OCR_MODELS = {
+  detectionPath: new URL('./assets/ch_PP-OCRv4_det_infer.onnx', window.location.href).href,
+  recognitionPath: new URL('./assets/ch_PP-OCRv4_rec_infer.onnx', window.location.href).href,
+  dictionaryPath: new URL('./assets/ppocr_keys_v1.txt', window.location.href).href
+};
+let betterOCRPromise = null;
+let ocrRunning = false;
+let ocrPhaseLabel = "";
+let ocrPhaseBase = 0;
+let ocrPhaseSpan = 1;
+let batchDocumentsProcessed = 0;
+let localFieldExtractorPromise = null;
+let lastAIDebug = null;
+
+function toBase64(arr){
+  let str = "";
+  for(let i=0;i<arr.length;i++) str += String.fromCharCode(arr[i]);
+  return btoa(str);
+}
+
+function fromBase64(str){
+  const bin = atob(str);
+  const len = bin.length;
+  const bytes = new Uint8Array(len);
+  for(let i=0;i<len;i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+async function deriveKey(password, salt){
+  const pwKey = await crypto.subtle.importKey(
+    "raw",
+    textEncoder.encode(password),
+    { name: "PBKDF2" },
+    false,
+    ["deriveKey"]
+  );
+
+  return crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt: salt,
+      iterations: 200000,
+      hash: "SHA-256",
+    },
+    pwKey,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt","decrypt"]
+  );
+}
+
+async function encryptJSON(obj, password){
+  const jsonStr = JSON.stringify(obj);
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv   = crypto.getRandomValues(new Uint8Array(12));
+  const key  = await deriveKey(password, salt);
+
+  const cipherBuf = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    key,
+    textEncoder.encode(jsonStr)
+  );
+
+  const cipherBytes = new Uint8Array(cipherBuf);
+  const full = new Uint8Array(salt.length + iv.length + cipherBytes.length);
+  full.set(salt, 0);
+  full.set(iv, salt.length);
+  full.set(cipherBytes, salt.length + iv.length);
+
+  return toBase64(full);
+}
+
+async function decryptJSON(cipherBase64, password){
+  const full = fromBase64((cipherBase64 || "").trim());
+  if (full.length < 16 + 12 + 1) throw new Error("Datos insuficientes");
+
+  const salt = full.slice(0, 16);
+  const iv   = full.slice(16, 28);
+  const data = full.slice(28);
+
+  const key = await deriveKey(password, salt);
+
+  const plainBuf = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv },
+    key,
+    data
+  );
+
+  const jsonStr = textDecoder.decode(plainBuf);
+  return JSON.parse(jsonStr);
+}
+
+// ---------- Helpers texto ----------
+const tcase = s => (s||"").toLowerCase().replace(/\b([A-Za-zÁÉÍÓÚÜÑáéíóúüñ])/g,c=>c.toUpperCase());
+const normalize = s => (s||"").normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+const normAZ = s => (s||"").normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase()
+  .replace(/[^A-ZÑÁÉÍÓÚÜ\s-]/g,'').replace(/\s+/g,' ').trim();
+
+// Construye NS (sin espacios) y mapa de índices a RAW
+function buildNS(raw){
+  const up0 = normalize(raw||"");
+  // Normaliza variantes OCR del separador MRZ "<" (japonés 'く' y full-width '＜')
+  const up = up0.replace(/く/g,'<').replace(/＜/g,'<');
+  let NS = ""; const MAP = [];
+  for (let i=0;i<up.length;i++){
+    const ch = up[i];
+    if (/\s/.test(ch)) continue;
+    NS += ch; MAP.push(i);
+  }
+  return { NS, MAP, RAW: raw||"", UPROW: up };
+}
+
+// ---------- Distancia (fuzzy) ----------
+function damerauLevenshtein(a,b,limit=2){
+  a=a||""; b=b||""; if(a===b) return 0; if(!a||!b) return Math.min(limit+1, Math.max(a.length,b.length));
+  const al=a.length, bl=b.length; if (Math.abs(al-bl)>limit) return limit+1;
+  const dp=Array.from({length:al+1},()=>Array(bl+1).fill(0));
+  for(let i=0;i<=al;i++) dp[i][0]=i; for(let j=0;j<=bl;j++) dp[0][j]=j;
+  for(let i=1;i<=al;i++){
+    let minRow=limit+1;
+    for(let j=1;j<=bl;j++){
+      const cost=a[i-1]===b[j-1]?0:1;
+      let v=Math.min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1]+cost);
+      if(i>1&&j>1&&a[i-1]===b[j-2]&&a[i-2]===b[j-1]) v=Math.min(v, dp[i-2][j-2]+1);
+      dp[i][j]=v; if(v<minRow) minRow=v;
+    }
+    if(minRow>limit) return limit+1;
+  }
+  return dp[al][bl];
+}
+
+// --- Helper: localizar etiqueta con hasta 2 errores OCR (aprox) ---
+function findApproxTag(ns, tag, maxDist = 2) {
+  const T = tag.toUpperCase().replace(/\s+/g,'');
+  const L = T.length;
+  let best = { idx: -1, d: maxDist + 1 };
+  for (let i = 0; i <= ns.length - L; i++) {
+    const win = ns.slice(i, i + L);
+    const d = damerauLevenshtein(win, T, maxDist);
+    if (d <= maxDist && (d < best.d || best.idx === -1)) {
+      best = { idx: i, d };
+      if (d === 0) break;
+    }
+  }
+  return best.idx;
+}
+
+// ---------- Librerías (municipios / provincias / nombres) ----------
+let MUNICIPIOS_SET = new Set([
+  // Fallback mínimo (por si fetch falla en file://)
+  "MADRID","ALCOBENDAS","BARCELONA","VALENCIA","SEVILLA","MALAGA","MURCIA",
+  "SANTA CRUZ DE TENERIFE","LAS PALMAS","ARONA","ADEJE","TELDE","VIGO","OVIEDO","GIJON","BILBAO","VALLADOLID","SALAMANCA","TOLEDO"
+].map(normalize));
+
+let MUNICIPIOS_NOSPACE = new Map([...MUNICIPIOS_SET].map(m => [m.replace(/\s+/g,''), m]));
+
+const PROVINCIAS = PROVINCIAS_ES.map(normalize);
+const PROV_SET = new Set(PROVINCIAS);
+const PROV_NOSPACE = new Map([...PROV_SET].map(p => [p.replace(/\s+/g,''), p]));
+
+let NOMBRES_SET = new Set(); // se cargará de nombres.json si se puede
+
+async function initMunicipios(){
+  try{
+    const res = await fetch(new URL('/municipios.json', window.location.origin), {cache:'no-store'});
+    if (!res.ok) throw new Error('HTTP '+res.status);
+    const arr = await res.json();
+    if (Array.isArray(arr) && arr.length){
+      MUNICIPIOS_SET = new Set(arr.map(x => normalize(String(x))));
+      MUNICIPIOS_NOSPACE = new Map([...MUNICIPIOS_SET].map(m => [m.replace(/\s+/g,''), m]));
+      console.log(`Municipios cargados: ${MUNICIPIOS_SET.size}`);
+    }
+  }catch(e){
+    console.warn('municipios.json no accesible (¿file:// / CORS?). Uso fallback.', e);
+  }
+}
+async function initNombres(){
+  try{
+    const res = await fetch(new URL('/nombres.json', window.location.origin), {cache:'no-store'});
+    if (!res.ok) throw new Error('HTTP '+res.status);
+    const arr = await res.json();
+    if (Array.isArray(arr) && arr.length){
+      // nombres.json tiene líneas tipo "AARON,21540,11.0" o nombres compuestos
+      // extrae solo el campo de nombre (antes de la primera coma)
+      const list = arr.map(line => String(line).split(',')[0]).filter(Boolean);
+      NOMBRES_SET = new Set(list.map(normalize));
+      console.log(`Nombres cargados: ${NOMBRES_SET.size}`);
+    }
+  }catch(e){
+    console.warn('nombres.json no accesible (¿file:// / CORS?). Padres quedarán en duda si no hay set.', e);
+  }
+}
+
+// ---------- Matching municipio / provincia ----------
+function matchMunicipioSuffixNS(ns){
+  if (!ns || !MUNICIPIOS_NOSPACE.size) return null;
+  const maxLen = Math.min(32, ns.length);
+  for (let len = maxLen; len >= 4; len--) {
+    const sub = ns.slice(ns.length - len);
+    const hit = MUNICIPIOS_NOSPACE.get(sub);
+    if (hit) return { canon: hit, index: ns.length - len };
+  }
+  return null;
+}
+function findProvinceAfter(ns, start=0){
+  if (!ns) return null;
+  let best = null;
+  for (const [pNS, canon] of PROV_NOSPACE.entries()){
+    const idx = ns.indexOf(pNS, start);
+    if (idx !== -1){
+      if (!best || idx < best.index || (idx === best.index && pNS.length > best.pNS.length)){
+        best = { index: idx, canon, pNS };
+      }
+    }
+  }
+  return best;
+}
+function matchMunicipio(raw){
+  const cand = normAZ(raw);
+  const can  = normalize(cand);
+  if (MUNICIPIOS_SET.has(can)) return {canon:cand, approx:false, found:true};
+  const compact = can.replace(/\s+/g, '');
+  const direct = MUNICIPIOS_NOSPACE.get(compact);
+  if (direct) return {canon: direct, approx:false, found:true};
+  if (can.length < 5) return {canon:cand, approx:false, found:false};
+  let best=null, bestD=2;
+  for (const m of MUNICIPIOS_SET){
+    if (m[0] !== can[0]) continue;
+    const d = damerauLevenshtein(can, m, 2);
+    if (d<bestD){ bestD=d; best=m; if (d===0) break; }
+  }
+  if (best!=null && bestD<=1) return {canon: best.replace(/\s+/g,' ').trim(), approx:true, found:true};
+  return {canon:cand, approx:false, found:false};
+}
+
+// ---------- MRZ helpers ----------
+function mapDigit(ch){
+  if (/[0-9]/.test(ch)) return ch;
+  const t = ch.toUpperCase();
+  if (t==='O'||t==='Q') return '0';
+  if (t==='I'||t==='L') return '1';
+  if (t==='Z') return '2';
+  if (t==='S') return '5';
+  if (t==='B') return '8';
+  return '0';
+}
+
+// ---------- Parser principal (NS) ----------
+function parseByRules(ocrRaw){
+  // --- construir NS y, si empieza por EQUIPO, recortar hasta DOMICILIO ---
+  {
+    const built = buildNS(ocrRaw);
+    let NS0 = built.NS, MAP0 = built.MAP, RAW0 = built.RAW;
+
+    // Si la cadena NS empieza con EQUIPO... eliminar "EQUIPO" + alfanumérico hasta "DOMICILIO"
+    if (NS0.startsWith('EQUIPO')) {
+      const idxDomStart = NS0.indexOf('DOMICILIO');
+      if (idxDomStart !== -1) {
+        NS0  = NS0.slice(idxDomStart);
+        MAP0 = MAP0.slice(idxDomStart); // mantiene alineado el mapeo RAW
+      }
+    }
+
+    // Exponer a la función con los mismos nombres que usas abajo
+    var NS = NS0, MAP = MAP0, RAW = RAW0;
+  }
+
+  // Anclajes
+  // Normaliza confusiones OCR 1/l→I, 0/O→O, 5→S, Q/C→D (reemplazo 1:1, mantiene índice)
+  const canonNS = NS.replace(/[l1]/g,'I').replace(/[0Ｏ]/g,'O').replace(/5/g,'S').replace(/[QC]/g,'D');
+
+  // IDESP robusto con variantes OCR (I/1/L)(D/Q/C/O/0)E(S/5)P  + casos IOESP/IOSEP
+  const idxIDESP = (() => {
+    const hits = [];
+
+    // 1) patrón general con confusiones
+    const rx = /[IL1](?:D|Q|C|O|0)E(?:S|5)P/g;
+    for (const m of canonNS.matchAll(rx)) hits.push(m.index);
+
+    // 2) casos explícitos históricos
+    const a = canonNS.indexOf('IOESP'); if (a !== -1) hits.push(a);
+    const b = canonNS.indexOf('IOSEP'); if (b !== -1) hits.push(b);
+
+    if (!hits.length) return -1;
+    return Math.min(...hits);
+  })();
+
+  const idxEQUIPO = NS.indexOf('EQUIPO');
+  const idxDOM = NS.indexOf('DOMICILIO');
+
+  // Etiqueta de nacimiento (exacta primero)
+  let idxLUG = (()=>{ 
+    const a=NS.indexOf('LUGARDENACIMIENTO'); 
+    if (a!==-1) return a; 
+    return NS.indexOf('LAGARDENACIMIENTO');
+  })();
+
+  // Si no se encontró exacto, admite hasta 2 errores OCR
+  if (idxLUG === -1) {
+    const alt1 = findApproxTag(NS, 'LUGARDE NACIMIENTO', 2);
+    const alt2 = findApproxTag(NS, 'LAGARDE NACIMIENTO', 2);
+    idxLUG = (alt1 !== -1) ? alt1 : (alt2 !== -1 ? alt2 : -1);
+  }
+
+  const gStop = [idxIDESP, idxEQUIPO].filter(i=>i!==-1).reduce((m,i)=>Math.min(m,i), NS.length);
+
+  // --- DOMICILIO ---
+  let domicilio = "", domicilioUncertain = true;
+  if (idxDOM !== -1){
+    const start = idxDOM + 'DOMICILIO'.length;
+    const aLUG = idxLUG === -1 ? Infinity : idxLUG;
+    const aEQ  = idxEQUIPO === -1 ? Infinity : idxEQUIPO;
+    const aID  = idxIDESP === -1 ? Infinity : idxIDESP;
+    const pv   = findProvinceAfter(NS, start);
+    const anchorEnd = Math.min(aLUG, aEQ, aID, NS.length);
+    const end = (pv && pv.index < anchorEnd) ? pv.index : anchorEnd;
+
+    let domNS = NS.slice(start, end).trim();
+    const suf = matchMunicipioSuffixNS(domNS);
+
+    // reconstruir calle legible
+    const rawStart = MAP[start] ?? 0;
+    const rawEndStreet = (suf ? MAP[start + suf.index - 1] : MAP[end - 1]) ?? MAP[MAP.length-1];
+    let street = RAW.slice(rawStart, (rawEndStreet ?? rawStart)+1)
+      .replace(/\s*,\s*/g, ', ')
+      .replace(/\.([A-Za-zÁÉÍÓÚÜÑ])/g, '. $1')
+      .replace(/([A-Za-zÁÉÍÓÚÜÑ])(\d)/g, '$1 $2')
+      .replace(/(\d)([A-Za-zÁÉÍÓÚÜÑ])/g, '$1 $2')
+      .replace(/\s{2,}/g,' ')
+      .trim();
+
+    if (suf){
+      domicilio = `${street}, ${tcase(suf.canon)}`;
+      domicilioUncertain = false;
+    } else {
+      domicilio = street;
+    }
+  }
+
+  // --- LUGAR NACIMIENTO ---
+  let lugarNac = "", lugarUncertain = true;
+  if (idxLUG !== -1){
+    const start = idxLUG + (NS.startsWith('LUGARDENACIMIENTO', idxLUG) ? 'LUGARDENACIMIENTO'.length : 'LAGARDENACIMIENTO'.length);
+    const aH  = (()=>{ const i=NS.indexOf('HIJOADE', start); return i!==-1?i:Infinity;})();
+    const aID = idxIDESP !== -1 ? idxIDESP : Infinity;
+    const aEQ = idxEQUIPO !== -1 ? idxEQUIPO : Infinity;
+    const pv  = findProvinceAfter(NS, start);
+    // no invadir el "DE" de padres
+    const idxH = NS.indexOf('HIJOADE', start);
+    const limitDE = (idxH!==-1) ? (NS.indexOf('DE', idxH+'HIJOADE'.length) || Infinity) : Infinity;
+
+    const anchorEnd = Math.min(aH, aID, aEQ, NS.length, limitDE);
+    const end = (pv && pv.index < anchorEnd) ? pv.index : anchorEnd;
+
+    let seg = NS.slice(start, end);
+    const cutNum = seg.search(/[0-9]/); if (cutNum !== -1) seg = seg.slice(0, cutNum);
+
+    const mun = matchMunicipio(seg);
+    if (pv){
+      const prov = tcase(pv.canon);
+      const mc = mun.found ? tcase(mun.canon) : tcase(seg);
+      lugarUncertain = false;
+      lugarNac = (!seg || normalize(mc)===normalize(pv.canon)) ? prov : `${mc}, ${prov}`;
+    }else{
+      lugarNac = mun.found ? tcase(mun.canon) : tcase(seg);
+      if (!(mun.found && !mun.approx)) lugarUncertain = true;
+    }
+  }
+
+  // --- PADRES (corte por 'ADE' → IDESP; usa librería, no peta; descompone nombres pegados) ---
+  let padres = "", padresUncertain = true;
+  {
+    const hasName = (tok)=>{
+      if (!tok) return false;
+      if (!NOMBRES_SET || NOMBRES_SET.size === 0) return false;
+      return NOMBRES_SET.has(normalize(tok));
+    };
+
+    if (idxIDESP !== -1){
+      // Buscar anclaje 'ADE' robusto (A[ D/Q/C/O/0 ]?E) sobre NS (sin espacios), antes de IDESP; ordenados
+      const adeIdxs = (()=> {
+        const out = [];
+        const rx = /A[ DQCO0O]?E/g; // ADE, AOE, A0E, AQE, ACE y AE
+        rx.lastIndex = 0;
+        let m;
+        while ((m = rx.exec(NS))) {
+          const i = m.index;
+          if (idxIDESP !== -1 && i < idxIDESP) out.push(i);
+          if (idxIDESP !== -1 && i >= idxIDESP) break;
+        }
+        out.sort((a,b)=>a-b);
+        return out;
+      })();
+
+      let candidates = adeIdxs;
+      if (idxLUG !== -1){
+        const afterLugar = adeIdxs.filter(i => i > idxLUG);
+        if (afterLugar.length) candidates = afterLugar;
+      }
+
+      const extractPair = (segNS)=>{
+        let seg = (segNS||"").replace(/[0-9]+/g,'').replace(/[\/\|_!¡]+/g,'I');
+
+        const deco = (s)=>{
+          if (!s) return "";
+          if (hasName(s)) return tcase(s);
+          const C = s;
+          for (let k=2; k<=Math.min(12, C.length-2); k++){
+            const A = C.slice(0,k), B = C.slice(k);
+            if (hasName(A) && hasName(B)) return `${tcase(A)} ${tcase(B)}`;
+          }
+          return "";
+        };
+
+        for (let j=1;j<seg.length-1;j++){
+          if (seg[j] !== 'I') continue;
+          const L = seg.slice(0,j), R = seg.slice(j+1);
+          const Ld = deco(L), Rd = deco(R);
+          if (Ld && Rd) return `${Ld} y ${Rd}`;
+        }
+
+        const compact = seg.replace(/I+/g,'');
+        for (let m=2;m<=Math.min(24, compact.length-2);m++){
+          const L = compact.slice(0,m), R = compact.slice(m);
+          const Ld = deco(L), Rd = deco(R);
+          if (Ld && Rd) return `${Ld} y ${Rd}`;
+        }
+
+        const toks = seg.split(/I+/).filter(Boolean);
+        for (let a=0;a<toks.length;a++){
+          for (let b=a+1;b<toks.length;b++){
+            const Ld = deco(toks[a]), Rd = deco(toks[b]);
+            if (Ld && Rd) return `${Ld} y ${Rd}`;
+          }
+        }
+        return "";
+      };
+
+      if (candidates.length){
+        const iADE = candidates[candidates.length - 1];
+        const segNS = NS.slice(iADE + 3, idxIDESP);
+        const pair = extractPair(segNS);
+        if (pair){
+          padres = pair; padresUncertain = false;
+        } else {
+          padres = ""; padresUncertain = true;
+        }
+      } else if (idxLUG !== -1){
+        const start = idxLUG + (NS.startsWith('LUGARDENACIMIENTO', idxLUG) ? 'LUGARDENACIMIENTO'.length : 'LAGARDENACIMIENTO'.length);
+        if (start < idxIDESP){
+          const segNS = NS.slice(start, idxIDESP);
+          const pair = extractPair(segNS);
+          if (pair){
+            padres = pair; padresUncertain = false;
+          } else {
+            padres = ""; padresUncertain = true;
+          }
+        }
+      }
+
+      if (padres){
+        const parts = padres.split(/\s+y\s+/i);
+        if (parts.length===2){
+          const badA = PROV_SET.has(normalize(parts[0])) || MUNICIPIOS_SET.has(normalize(parts[0]));
+          const badB = PROV_SET.has(normalize(parts[1])) || MUNICIPIOS_SET.has(normalize(parts[1]));
+          if (badA || badB) padresUncertain = true;
+        }
+      }
+    }
+  }
+
+  // --- PARCHE ÚNICO: Provincia como final inclusivo + backfill DOMICILIO si falta ---
+  (function(){
+    // Helper: última provincia ANTES de un índice dado en NS
+    function lastProvinceBefore(limitIdx){
+      let last = null;
+      for (const [pNS, canon] of PROV_NOSPACE.entries()){
+        const i = NS.lastIndexOf(pNS, limitIdx);
+        if (i !== -1 && i <= limitIdx){
+          if (!last || i > last.index || (i === last.index && pNS.length > last.pNS.length)){
+            last = { index: i, canon, pNS };
+          }
+        }
+      }
+      return last;
+    }
+
+    // 1) NACIMIENTO: si idxLUG válido y cálculo previo vacío o en duda,
+    // usa la PRIMERA provincia DESPUÉS de idxLUG como final inclusivo.
+    if (idxLUG !== -1 && (!lugarNac || lugarUncertain)) {
+      const start = idxLUG + (NS.startsWith('LUGARDENACIMIENTO', idxLUG) ? 'LUGARDENACIMIENTO'.length : (NS.startsWith('LAGARDENACIMIENTO', idxLUG) ? 'LAGARDENACIMIENTO'.length : 0));
+      if (start > idxLUG) {
+        const pv = findProvinceAfter(NS, start);
+        if (pv) {
+          // recorta hasta provincia (inclusiva)
+          const rawStart = MAP[start] ?? 0;
+          const rawEnd   = MAP[pv.index + pv.pNS.length - 1] ?? (MAP[MAP.length-1] || RAW.length-1);
+          const segRaw   = RAW.slice(rawStart, rawEnd + 1);
+          // normaliza
+          const clean = segRaw.replace(/\s{2,}/g,' ').trim();
+          const municipioGuess = matchMunicipio(clean);
+          const provName = tcase(pv.canon);
+          if (municipioGuess.found) {
+            lugarNac = (normalize(municipioGuess.canon) === normalize(pv.canon))
+              ? provName
+              : `${tcase(municipioGuess.canon)}, ${provName}`;
+          } else {
+            lugarNac = `${tcase(clean.replace(/\s*,\s*/g, ', '))}`.replace(/\s+,/g, ',');
+          }
+          lugarUncertain = false;
+        }
+      }
+    }
+
+    // 2) DOMICILIO: si NO hay DOMICILIO claro (vacío o incierto) y SÍ hay idxLUG,
+    // toma la ÚLTIMA provincia ANTES de idxLUG como fin inclusivo, y busca hacia atrás
+    // un token de vía razonable (o 'DOMICILIO' si existiera).
+    if (( !domicilio || domicilioUncertain ) && idxLUG !== -1) {
+      const pvPrev = lastProvinceBefore(idxLUG - 1);
+      if (pvPrev) {
+        // punto final inclusivo en RAW
+        const rawEnd = MAP[pvPrev.index + pvPrev.pNS.length - 1] ?? (MAP[MAP.length-1] || RAW.length-1);
+        // busca inicio en RAW hacia atrás: DOMICILIO o tokens de vía
+        const rawSearch = RAW.slice(0, rawEnd + 1);
+        const viaRx = /(DOMICILIO|C\.\s*|AVDA|AVENIDA|CL\s|CALLE|PASEO|PSO)/gi;
+        let m, lastMatch = null;
+        while ((m = viaRx.exec(rawSearch))) lastMatch = m;
+        if (lastMatch) {
+          const rawStart = Math.max(0, lastMatch.index + (lastMatch[1].toUpperCase()==='DOMICILIO' ? 'DOMICILIO'.length : 0));
+          let seg = RAW.slice(rawStart, rawEnd + 1)
+            .replace(/\s*,\s*/g, ', ')
+            .replace(/\s{2,}/g,' ')
+            .trim();
+          // engancha municipio y provincia si se reconocen
+          const muni = matchMunicipio(seg);
+          const provName = tcase(pvPrev.canon);
+          if (muni.found && normalize(muni.canon) !== normalize(pvPrev.canon)) {
+            if (!new RegExp(provName.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s*$','i').test(seg)) {
+              seg = `${tcase(muni.canon)}, ${provName}`;
+            }
+          } else if (!/,\s*[A-ZÁÉÍÓÚÜÑ ]+$/.test(seg)) {
+            seg = `${seg.replace(/\s+,/g, ',')}, ${provName}`;
+          }
+          domicilio = seg;
+          domicilioUncertain = false;
+        }
+      }
+    }
+  })();
+
+  // --- MRZ (L1/L2/L3) (SE MANTIENE IGUAL) ---
+  let MRZ_L1 = "", MRZ_L2 = "", MRZ_L3 = "";
+  if (idxIDESP !== -1) {
+    // L1: desde IDESP hasta el PRIMER "<<<" que siga
+    const firstArrows = NS.indexOf('<<<', idxIDESP);
+    if (firstArrows !== -1) {
+      MRZ_L1 = NS.slice(idxIDESP, firstArrows);
+
+      // L2: buscar patrón YYMMDD? + sexo [MF] en una VENTANA limitada tras el primer "<<<"
+      const winEnd = Math.min(NS.length, firstArrows + 180);
+      const winL2 = NS.slice(firstArrows + 3, winEnd);
+      const mL2 = winL2.match(/([0-9A-Z]{2})([0-9A-Z]{2})([0-9A-Z]{2}).([MF])/);
+      if (mL2) MRZ_L2 = mL2[0];
+
+      // L3: tras "ESP" si existe; si no, tras la misma ventana; NO exige segundo "<<<"
+      const idxESPwin = winL2.indexOf('ESP');
+      let afterIdxAbs = firstArrows + 3;
+      if (idxESPwin !== -1) afterIdxAbs = firstArrows + 3 + idxESPwin + 3;
+
+      const nextArrows = NS.indexOf('<<<', afterIdxAbs);
+      let l3Start = (nextArrows !== -1) ? nextArrows + 3 : afterIdxAbs;
+
+      while (l3Start < NS.length && !/[A-Z<]/.test(NS[l3Start])) l3Start++;
+      MRZ_L3 = NS.slice(l3Start, Math.min(NS.length, l3Start + 120));
+    }
+  }
+
+  // Nº doc desde L1/L2
+  function docFromL1L2(l1,l2){
+    if (!l1) return "";
+    const m = l1.match(/<{3,}/);
+    if (m){ const idx=m.index; if (idx>=9) return l1.slice(idx-9, idx).toUpperCase(); }
+    if (l2){ const clean=l1.replace(/</g,''); if (clean.length>=9) return clean.slice(-9).toUpperCase(); }
+    return "";
+  }
+  let numDoc = docFromL1L2(MRZ_L1, MRZ_L2);
+
+  // Fecha y sexo desde L2 (mapDigit para confusiones)
+  let fechaNac="", sexo="";
+  if (MRZ_L2){
+    const m = MRZ_L2.match(/([0-9A-Z]{2})([0-9A-Z]{2})([0-9A-Z]{2}).([MF])/);
+    if (m){
+      const yy = parseInt(mapDigit(m[1][0]) + mapDigit(m[1][1]),10);
+      const mm = mapDigit(m[2][0]) + mapDigit(m[2][1]);
+      const dd = mapDigit(m[3][0]) + mapDigit(m[3][1]);
+      const year = yy >= 30 ? 1900 + yy : 2000 + yy;
+      fechaNac = `${dd}/${mm}/${year}`;
+      sexo = m[4] === 'F' ? 'FEMENINO' : 'MASCULINO';
+    }
+  }
+// --- PATCH DE CORRECCIÓN MRZ: limitar lectura a la zona antes del siguiente "ESP" o "<<<" ---
+(function(){
+  if (!MRZ_L1 && !MRZ_L2) return;
+
+  // 1. Corregir Nº Documento si IDESP contiene la secuencia correcta
+  if (idxIDESP !== -1 && (!numDoc || numDoc.length < 8)) {
+    const afterID = NS.slice(idxIDESP + 5, idxIDESP + 60); // mira los 60 caracteres tras IDESP
+    const mDoc = afterID.match(/([A-Z0-9]{7,9})</); // DNI/NIE seguido de flecha
+    if (mDoc) numDoc = mDoc[1].toUpperCase();
+  }
+
+  // 2. Corregir Fecha/Sexo si se detectan dentro de la línea posterior a IDESP
+  if ((!fechaNac || !sexo) && idxIDESP !== -1) {
+    const afterID = NS.slice(idxIDESP, idxIDESP + 120);
+    const mL2 = afterID.match(/([0-9A-Z]{6})([MF])/);
+    if (mL2) {
+      const raw6 = mL2[1].split("").map(mapDigit).join("");
+      const yy = parseInt(raw6.slice(0,2), 10);
+      const mm = raw6.slice(2,4);
+      const dd = raw6.slice(4,6);
+      const year = yy >= 30 ? 1900 + yy : 2000 + yy;
+      fechaNac = `${dd}/${mm}/${year}`;
+      sexo = mL2[2] === 'F' ? 'FEMENINO' : 'MASCULINO';
+    }
+  }
+})();
+// === PATCH SOLO FECHA NAC (L2 = YYMMDD + check + M/F) ===
+(function(){
+  if (idxIDESP === -1) return;
+
+  // si ya hay fecha válida (dd/mm/aaaa) y plausible, no tocamos
+  const okFecha = f => /^\d{2}\/\d{2}\/\d{4}$/.test(f) &&
+                       (m=>m>=1&&m<=12)(parseInt(f.slice(3,5),10)) &&
+                       (d=>d>=1&&d<=31)(parseInt(f.slice(0,2),10));
+  if (fechaNac && okFecha(fechaNac)) return;
+
+  const firstArrows = NS.indexOf('<<<', idxIDESP);
+  if (firstArrows === -1) return;
+
+  // M/F más cercano hacia la izquierda desde el primer '<<<'
+  let sexAt = -1;
+  for (let p = firstArrows - 1; p >= idxIDESP; p--) {
+    const ch = NS[p];
+    if (ch === 'M' || ch === 'F') { sexAt = p; break; }
+  }
+  if (sexAt === -1) return;
+
+  // L2: ... YYMMDD + check + (M/F)
+  if (sexAt - 7 >= idxIDESP) {
+    const raw7 = NS.slice(sexAt - 7, sexAt);        // 6 fecha + 1 check
+    const raw6 = raw7.slice(0, 6).split('').map(mapDigit).join('');
+    const yy = parseInt(raw6.slice(0,2), 10);
+    const mm = parseInt(raw6.slice(2,4), 10);
+    const dd = parseInt(raw6.slice(4,6), 10);
+    if (mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) {
+      const year = yy >= 30 ? 1900 + yy : 2000 + yy;
+      fechaNac = `${String(dd).padStart(2,'0')}/${String(mm).padStart(2,'0')}/${year}`;
+    }
+  }
+})();
+  // Nacionalidad
+  let Nacionalidad = (MRZ_L1.includes('ESP') || MRZ_L2.includes('ESP')) ? "España" : "";
+
+  // Apellidos/Nombre desde L3 (sin dígitos)
+  let nombre="", apellidos="";
+  if (MRZ_L3){
+    const parts = MRZ_L3.split('<').filter(Boolean);
+    const ap1 = (parts[0]||"").replace(/[0-9]/g,'');
+    const ap2 = (parts[1]||"").replace(/[0-9]/g,'');
+    const nom1= (parts[2]||"").replace(/[0-9]/g,'');
+    const nom2= (parts[3]||"").replace(/[0-9]/g,'');
+    apellidos = [ap1,ap2].filter(Boolean).join(' ').trim().toUpperCase();
+    nombre = tcase([nom1,nom2].filter(Boolean).join(' ').trim());
+  }
+
+  // Sanitización final
+  const sanitize = s => (s||"").replace(/^[\s:.,-]+|[\s:.,-]+$/g,'').replace(/\s{2,}/g,' ').trim();
+  let out = {
+    Nombre: tcase(sanitize(nombre)),
+    Apellidos: sanitize(apellidos).toUpperCase(),
+    "Tipo de documento": "DNI",
+    "Nº Documento": sanitize(numDoc||""),
+    Sexo: sanitize(sexo),
+    Nacionalidad: sanitize(Nacionalidad),
+    "Nombre de los Padres": tcase(sanitize(padres)).replace(/\sY\s/g,' y '),
+    "Fecha de nacimiento": sanitize(fechaNac),
+    "Lugar de nacimiento": tcase(sanitize(lugarNac)),
+    Domicilio: tcase(sanitize(domicilio)),
+    _flags:{
+      Nombre: !nombre,
+      Apellidos: !apellidos,
+      Padres: padresUncertain,
+      Lugar: lugarUncertain,
+      Domicilio: domicilioUncertain
+    }
+  };
+  return out;
+}
+
+// ---------- Mini IA local: interpreta campos con reglas documentales ----------
+function normalizeOCRTextForAI(text){
+  return (text || "")
+    .replace(/\r/g, "\n")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function tokenizeOCRLines(text){
+  return normalizeOCRTextForAI(text)
+    .split("\n")
+    .map((line, index) => ({ raw: line.trim(), index }))
+    .filter(item => item.raw);
+}
+
+function canonicalOCRLine(line){
+  return normalize(line || "")
+    .replace(/く/g, '<')
+    .replace(/＜/g, '<')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function mrzify(line){
+  return canonicalOCRLine(line)
+    .replace(/\s+/g, '')
+    .replace(/く/g, '<')
+    .replace(/＜/g, '<');
+}
+
+function cleanLineForField(line){
+  return (line || "")
+    .replace(/^(APELLIDOS?|SURNAME|NOMBRES?|GIVEN\s+NAMES?|SEXO|SEX|NACIONALIDAD|NATIONALITY|DOMICILIO|ADDRESS|LUGAR\s+DE\s+NACIMIENTO|PLACE\s+OF\s+BIRTH|NACIMIENTO|FECHA\s+DE\s+NACIMIENTO|DATE\s+OF\s+BIRTH|HIJO\s+DE|PADRES?|PARENTS?)\s*[:\-]?\s*/i, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+const FIELD_SCHEMAS = {
+  domicilio: {
+    labels: ["DOMICILIO", "DOMICLO", "DOMICLIO", "ADDRESS"],
+    stops: ["LUGAR DE NACIMIENTO", "PLACE OF BIRTH", "HIJO A DE", "PADRES", "PARENTS", "IDESP"]
+  },
+  lugar: {
+    labels: ["LUGAR DE NACIMIENTO", "PLACE OF BIRTH", "NACIMIENTO"],
+    stops: ["HIJO A DE", "PADRES", "PARENTS", "IDESP", "DOMICILIO"]
+  },
+  padres: {
+    labels: ["HIJO A DE", "PADRES", "PARENTS"],
+    stops: ["IDESP", "DOMICILIO", "LUGAR DE NACIMIENTO"]
+  }
+};
+
+function normalizeAnchorToken(text){
+  return canonicalOCRLine(text || "")
+    .replace(/[0-9]/g, " ")
+    .replace(/[<>{}\\/_|.,;:()[\]-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function fuzzyLabelMatchScore(line, labels){
+  const canon = normalizeAnchorToken(line);
+  if (!canon) return 0;
+  const compact = canon.replace(/\s+/g, "");
+  let best = 0;
+  for (const label of labels || []){
+    const target = normalizeAnchorToken(label);
+    const targetCompact = target.replace(/\s+/g, "");
+    if (!targetCompact) continue;
+    if (compact.includes(targetCompact)) return 1;
+    const approx = findApproxTag(compact, targetCompact, Math.min(4, Math.max(1, Math.floor(targetCompact.length * 0.22))));
+    if (approx !== -1) best = Math.max(best, 0.92);
+    const d = damerauLevenshtein(compact.slice(0, targetCompact.length + 3), targetCompact, 6);
+    const score = 1 - (d / Math.max(targetCompact.length, 1));
+    if (score > best) best = score;
+  }
+  return best;
+}
+
+function findSchemaAnchorIndex(lineObjs, schema){
+  let best = { index: -1, score: 0 };
+  for (let i = 0; i < (lineObjs || []).length; i++){
+    const score = fuzzyLabelMatchScore(lineObjs[i].raw, schema.labels);
+    if (score > best.score){
+      best = { index: i, score };
+      if (score >= 0.99) break;
+    }
+  }
+  return best.score >= 0.62 ? best.index : -1;
+}
+
+function looksLikeMRZ(line){
+  const mrz = mrzify(line);
+  return mrz.length >= 24 && /</.test(mrz) && /^[A-Z0-9<]+$/.test(mrz);
+}
+
+function findMRZBlocks(lineObjs){
+  const mrzLines = lineObjs.filter(item => looksLikeMRZ(item.raw)).map(item => mrzify(item.raw));
+  const td3 = [];
+  for (let i = 0; i < mrzLines.length - 1; i++){
+    if (mrzLines[i].length >= 40 && mrzLines[i+1].length >= 40) {
+      td3.push([mrzLines[i], mrzLines[i+1]]);
+    }
+  }
+  const td1 = [];
+  for (let i = 0; i < mrzLines.length - 2; i++){
+    if (mrzLines[i].length >= 24 && mrzLines[i+1].length >= 24 && mrzLines[i+2].length >= 24) {
+      td1.push([mrzLines[i], mrzLines[i+1], mrzLines[i+2]]);
+    }
+  }
+  return { td3, td1 };
+}
+
+function normalizeDocNumber(value){
+  return (value || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+}
+
+function digitsFromOCR(value){
+  return (value || "")
+    .split('')
+    .map(mapDigit)
+    .join('');
+}
+
+function formatDateYYMMDD(raw6){
+  const compact = digitsFromOCR(raw6).slice(0, 6);
+  if (compact.length !== 6) return "";
+  const yy = parseInt(compact.slice(0,2), 10);
+  const mm = parseInt(compact.slice(2,4), 10);
+  const dd = parseInt(compact.slice(4,6), 10);
+  if (!(mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31)) return "";
+  const year = yy >= 30 ? 1900 + yy : 2000 + yy;
+  return `${String(dd).padStart(2,'0')}/${String(mm).padStart(2,'0')}/${year}`;
+}
+
+function countryCodeToLabel(code){
+  const c = (code || "")
+    .toUpperCase()
+    .replace(/0/g, "O")
+    .replace(/1/g, "I")
+    .replace(/5/g, "S");
+  const isoName = window.PAISES_ISO3?.countryNameFromIso3?.(c);
+  if (isoName) return tcase(isoName);
+  if (c === "ESP") return "España";
+  if (c === "GBR") return "Reino Unido";
+  if (c === "DEU" || c === "D") return "Alemania";
+  if (c === "FRA") return "Francia";
+  if (c === "ITA") return "Italia";
+  if (c === "PRT") return "Portugal";
+  if (c === "NLD") return "Países Bajos";
+  if (c === "USA") return "Estados Unidos";
+  if (c === "VEN") return "Venezuela";
+  if (c === "COL") return "Colombia";
+  return c ? c : "";
+}
+
+function parseTD3Passport(lines){
+  if (!lines || lines.length < 2) return null;
+  const [l1, l2] = lines.map(line => mrzify(line).padEnd(44, '<'));
+  if (!/^P[A-Z<]/.test(l1)) return null;
+
+  const docNum = normalizeDocNumber(l2.slice(0, 9).replace(/</g, ''));
+  const nationality = countryCodeToLabel(l2.slice(10, 13));
+  const birth = formatDateYYMMDD(l2.slice(13, 19));
+  const sexChar = l2[20] || "";
+  const surnameAndNames = l1.slice(5).split('<<');
+  const surnames = (surnameAndNames[0] || "").replace(/</g, ' ').trim();
+  const names = (surnameAndNames.slice(1).join(' ') || "").replace(/</g, ' ').trim();
+
+  return {
+    "Tipo de documento": "Pasaporte",
+    "Nº Documento": docNum,
+    Nacionalidad: nationality,
+    "Fecha de nacimiento": birth,
+    Sexo: sexChar === 'F' ? 'FEMENINO' : (sexChar === 'M' ? 'MASCULINO' : ''),
+    Apellidos: surnames.toUpperCase(),
+    Nombre: tcase(names),
+    _confidence: {
+      "Tipo de documento": 0.98,
+      "Nº Documento": docNum ? 0.95 : 0,
+      Nacionalidad: nationality ? 0.9 : 0,
+      "Fecha de nacimiento": birth ? 0.92 : 0,
+      Sexo: sexChar ? 0.92 : 0,
+      Apellidos: surnames ? 0.9 : 0,
+      Nombre: names ? 0.9 : 0
+    }
+  };
+}
+
+function parseTD1Spanish(lines){
+  if (!lines || lines.length < 3) return null;
+  const [l1, l2, l3] = lines.map(line => mrzify(line).padEnd(30, '<'));
+  if (!/^[IA-C]/.test(l1)) return null;
+
+  const issuer = l1.slice(2, 5);
+  const docType = issuer === "ESP" ? "DNI" : "Documento";
+  const docNum = normalizeDocNumber(l1.slice(5, 14).replace(/</g, ''));
+  const birth = formatDateYYMMDD(l2.slice(0, 6));
+  const sexChar = l2[7] || "";
+  const nationality = countryCodeToLabel(l2.slice(15, 18) || issuer);
+  const nameParts = l3.split('<<');
+  const surnames = (nameParts[0] || "").replace(/</g, ' ').trim();
+  const names = (nameParts.slice(1).join(' ') || "").replace(/</g, ' ').trim();
+
+  return {
+    "Tipo de documento": docType,
+    "Nº Documento": docNum,
+    Nacionalidad: nationality,
+    "Fecha de nacimiento": birth,
+    Sexo: sexChar === 'F' ? 'FEMENINO' : (sexChar === 'M' ? 'MASCULINO' : ''),
+    Apellidos: surnames.toUpperCase(),
+    Nombre: tcase(names),
+    _confidence: {
+      "Tipo de documento": issuer ? 0.96 : 0,
+      "Nº Documento": docNum ? 0.94 : 0,
+      Nacionalidad: nationality ? 0.88 : 0,
+      "Fecha de nacimiento": birth ? 0.9 : 0,
+      Sexo: sexChar ? 0.9 : 0,
+      Apellidos: surnames ? 0.86 : 0,
+      Nombre: names ? 0.86 : 0
+    }
+  };
+}
+
+function normalizeMrzOcrLine(line){
+  let out = mrzify(line || "");
+  out = out.replace(/K{2,}/g, (m) => "<".repeat(m.length));
+  return out;
+}
+
+function cleanMRZNameChunk(chunk){
+  return (chunk || "")
+    .replace(/<+/g, " ")
+    .replace(/[0-9]/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function normalizeMrzNameLine(line){
+  let out = String(line || "");
+  out = out.replace(/K{2,}/g, "<<");
+  out = out.replace(/([A-Z]{3,})K<(?=[A-Z]{3,})/g, "$1<<");
+  let prev = "";
+  while (out !== prev){
+    prev = out;
+    out = out.replace(/([A-Z]{3,})K(?=[A-Z]{3,})/g, "$1<");
+  }
+  return out;
+}
+
+function expandCompactMrzNameChunk(chunk){
+  const raw = chunk || "";
+  if (/[<]/.test(raw)) return cleanMRZNameChunk(raw);
+  const parts = raw.split(/K+/).filter(Boolean);
+  if (parts.length >= 2 && parts.length <= 3 && parts.every(part => part.length >= 3)) {
+    return cleanMRZNameChunk(parts.join(" "));
+  }
+  return cleanMRZNameChunk(raw);
+}
+
+function chooseLikelySpanishDocNumber(tail){
+  const nie = String(tail || "").match(/([XYZ]\d{7}[A-Z])/);
+  if (nie) return normalizeDocNumber(nie[1]);
+  const matches = [...String(tail || "").matchAll(/(\d{7,8}[A-Z])/g)].map(m => normalizeDocNumber(m[1]));
+  if (!matches.length) return "";
+  const letters = "TRWAGMYFPDXBNJZSQVHLCKE";
+  const valid = matches.filter(candidate => {
+    const num = candidate.slice(0, -1);
+    const letter = candidate.slice(-1);
+    return /^\d{7,8}$/.test(num) && letters[Number(num) % 23] === letter;
+  });
+  if (valid.length) {
+    valid.sort((a, b) => a.length - b.length);
+    return valid[0];
+  }
+  return matches[matches.length - 1];
+}
+
+function parseSpanishIdespBlockFromOCR(ocrRaw){
+  const rawLines = tokenizeOCRLines(ocrRaw).map(item => mrzify(item.raw));
+  const lines = rawLines.map(line => normalizeMrzOcrLine(line));
+  for (let i = 0; i < lines.length; i++){
+    const line1 = lines[i];
+    const isIdentityPrefix = /I[DR]ESP/.test(line1) || /IRESP/.test(line1);
+    if (!isIdentityPrefix) continue;
+
+    const rawLine1 = rawLines[i] || line1;
+    const mPrefix = rawLine1.match(/I(?:D|R)ESP/);
+    const prefixIndex = mPrefix ? mPrefix.index : rawLine1.indexOf("IRESP");
+    const afterPrefix = rawLine1.slice((prefixIndex >= 0 ? prefixIndex : 0) + 5);
+    const tail = afterPrefix.replace(/^[A-Z]+/, "");
+    const isIresp = /IRESP/.test(line1);
+    const foreignDocRaw = tail.match(/([A-Z]\d{9}[A-Z])/);
+    const anchoredRaw = tail.match(/(\d{7,8}[A-Z])(?:[<K]+)?$/);
+    const docNum = isIresp
+      ? (foreignDocRaw ? normalizeDocNumber(foreignDocRaw[1]) : chooseLikelySpanishDocNumber(tail))
+      : (anchoredRaw ? normalizeDocNumber(anchoredRaw[1]) : chooseLikelySpanishDocNumber(tail));
+
+    let birth = "";
+    let sexo = "";
+    let nationality = "España";
+    const line2 = lines[i + 1] || "";
+    const dateSex = line2.match(/^([0-9A-Z]{6})[0-9A-Z]?([MF])/);
+    if (dateSex){
+      birth = formatDateYYMMDD(dateSex[1]);
+      sexo = dateSex[2] === "F" ? "FEMENINO" : "MASCULINO";
+    }
+    const nat = line2.match(/([A-Z0-9]{3})<{3,}/);
+    if (nat) nationality = countryCodeToLabel(nat[1]) || nationality;
+
+    let nombre = "";
+    let apellidos = "";
+    const rawNameLine = lines.slice(i + 1, i + 4).find(line => {
+      if (/IDESP/.test(line)) return false;
+      if (/^\d{6}[A-Z]/.test(line)) return false;
+      return /<<|<[A-Z]+</.test(line) || ((line.match(/K/g) || []).length >= 3);
+    });
+    const nameLine = rawNameLine ? normalizeMrzNameLine(rawNameLine) : rawNameLine;
+    if (nameLine){
+      const parts = nameLine.split("<<");
+      apellidos = expandCompactMrzNameChunk(parts[0]).toUpperCase();
+      nombre = tcase(expandCompactMrzNameChunk(parts.slice(1).join(" ")));
+    }
+
+    const validCore = isLikelyValidDoc(docNum) && isLikelyValidDate(birth);
+    if (!validCore) continue;
+
+    return {
+      Nombre: isLikelyValidName(nombre) ? nombre : "",
+      Apellidos: isLikelyValidSurname(apellidos) ? apellidos : "",
+      "Tipo de documento": /^[XYZ]/.test(docNum) || isIresp ? "NIE" : "DNI",
+      "Nº Documento": docNum,
+      Sexo: sexo,
+      Nacionalidad: nationality,
+      "Fecha de nacimiento": birth
+    };
+  }
+  return null;
+}
+
+function extractMrzIdentityFromOCR(ocrRaw){
+  const lines = tokenizeOCRLines(ocrRaw).map(item => mrzify(item.raw));
+  const candidate = [...lines].reverse().find(line => {
+    if (/^I[DR]ESP/.test(line) || /^IRESP/.test(line)) return false;
+    if (/^\d{6}[A-Z]/.test(line)) return false;
+    return (/[<K]/.test(line) && /[A-Z]{4,}/.test(line));
+  });
+  if (!candidate) return null;
+
+  const normalized = normalizeMrzNameLine(candidate);
+  if (!/<<|<[A-Z]{3,}</.test(normalized)) return null;
+
+  const parts = normalized.split("<<");
+  const apellidos = expandCompactMrzNameChunk(parts[0]).toUpperCase();
+  const nombre = tcase(expandCompactMrzNameChunk(parts.slice(1).join(" ")));
+
+  if (!isLikelyValidSurname(apellidos) || !isLikelyValidName(nombre)) return null;
+  return { Nombre: nombre, Apellidos: apellidos };
+}
+
+function extractSectionLines(lineObjs, startRegex, endRegexes, maxLines = 4){
+  if (!lineObjs || !lineObjs.length) return [];
+  const endList = endRegexes || [];
+  for (let i = 0; i < lineObjs.length; i++){
+    const canon = canonicalOCRLine(lineObjs[i].raw);
+    if (!startRegex.test(canon)) continue;
+    const out = [];
+    for (let j = i + 1; j < lineObjs.length && out.length < maxLines; j++){
+      const nextCanon = canonicalOCRLine(lineObjs[j].raw);
+      if (endList.some(rx => rx.test(nextCanon))) break;
+      if (/^IDESP/.test(nextCanon) || looksLikeMRZ(lineObjs[j].raw)) break;
+      const cleaned = cleanLineForField(lineObjs[j].raw);
+      if (!cleaned) continue;
+      out.push(cleaned);
+    }
+    if (out.length) return out;
+  }
+  return [];
+}
+
+function dedupeOrderedLines(lines){
+  const out = [];
+  const seen = new Set();
+  for (const line of lines || []){
+    const key = normalize(line || "").replace(/[^A-Z0-9]/g, "");
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(line);
+  }
+  return out;
+}
+
+function matchProvincia(raw){
+  const cand = normAZ(raw);
+  const can = normalize(cand);
+  if (PROV_SET.has(can)) return { canon: cand, approx: false, found: true };
+  const compact = can.replace(/\s+/g, '');
+  const direct = PROV_NOSPACE.get(compact);
+  if (direct) return { canon: direct, approx: false, found: true };
+  return { canon: cand, approx: false, found: false };
+}
+
+function normalizeSpanishPlace(lines){
+  const cleanedLines = dedupeOrderedLines((lines || []).map(line => cleanLineForField(line)).filter(Boolean));
+  if (!cleanedLines.length) return "";
+
+  const hasForeignCountry = cleanedLines.some(line => {
+    const up = normalize(line);
+    return /\b(RUSIA|VENEZUELA|FRANCIA|ALEMANIA|ITALIA|PORTUGAL|MARRUECOS|COLOMBIA|ARGENTINA|REINO UNIDO|UK|USA|ESTADOS UNIDOS)\b/.test(up);
+  });
+
+  if (hasForeignCountry){
+    return tcase(cleanedLines.join(", "));
+  }
+
+  const municipality = cleanedLines.map(matchMunicipio).find(hit => hit?.found)?.canon || "";
+  const province = cleanedLines.map(matchProvincia).find(hit => hit?.found)?.canon || "";
+
+  const parts = [];
+  if (municipality) parts.push(tcase(municipality));
+  if (province){
+    const provinceTitle = tcase(province);
+    if (!parts.some(part => normalize(part) === normalize(provinceTitle))) parts.push(provinceTitle);
+  }
+
+  if (parts.length) return parts.join(", ");
+  return tcase(cleanedLines.join(", "));
+}
+
+function normalizeSpanishAddress(lines){
+  const cleanedLines = dedupeOrderedLines((lines || []).map(line => cleanLineForField(line)).filter(Boolean));
+  if (!cleanedLines.length) return "";
+
+  const street = cleanedLines[0] ? tcase(cleanedLines[0]) : "";
+  const location = normalizeSpanishPlace(cleanedLines.slice(1));
+
+  if (street && location) return `${street}, ${location}`;
+  if (street) return street;
+  return location;
+}
+
+function parseLabeledDocumentBlocks(ocrRaw){
+  const lineObjs = tokenizeOCRLines(ocrRaw);
+  const schemaLines = (schemaName, maxLines) => {
+    const schema = FIELD_SCHEMAS[schemaName];
+    const start = findSchemaAnchorIndex(lineObjs, schema);
+    if (start === -1) return [];
+    const out = [];
+    for (let i = start + 1; i < lineObjs.length && out.length < maxLines; i++){
+      const raw = lineObjs[i].raw;
+      if (looksLikeMRZ(raw)) break;
+      if (/^IDESP/i.test(canonicalOCRLine(raw))) break;
+      const stopScore = fuzzyLabelMatchScore(raw, schema.stops);
+      if (stopScore >= 0.7) break;
+      const cleaned = cleanLineForField(raw);
+      if (!cleaned) continue;
+      out.push(cleaned);
+    }
+    return dedupeOrderedLines(out);
+  };
+
+  const domicilioLines = schemaLines("domicilio", 4);
+  const lugarLines = schemaLines("lugar", 3);
+  const padresLines = schemaLines("padres", 2);
+
+  const domicilio = domicilioLines.length ? normalizeSpanishAddress(domicilioLines) : "";
+  const lugar = lugarLines.length ? normalizeSpanishPlace(lugarLines) : "";
+  let padres = "";
+  if (padresLines.length){
+    padres = extractParentNamesFromSegment(padresLines.join(" "));
+    if (!padres){
+      const rawParents = padresLines.join(" ")
+        .replace(/\s*\/\s*/g, " y ")
+        .replace(/\s{2,}/g, " ")
+        .trim();
+      padres = tcase(rawParents);
+    }
+  }
+
+  return sanitizeParsedObjectFields({
+    Domicilio: domicilio,
+    "Lugar de nacimiento": lugar,
+    "Nombre de los Padres": padres
+  });
+}
+
+function extractLabeledValue(lineObjs, labelRegexes){
+  for (let i = 0; i < lineObjs.length; i++){
+    const raw = lineObjs[i].raw;
+    const canon = canonicalOCRLine(raw);
+    for (const rx of labelRegexes){
+      if (!rx.test(canon)) continue;
+      const inline = cleanLineForField(raw);
+      if (inline && inline !== raw.trim()) return inline;
+      const next = lineObjs[i + 1]?.raw || "";
+      if (next && !looksLikeMRZ(next)) return cleanLineForField(next);
+    }
+  }
+  return "";
+}
+
+function extractDateFromText(text){
+  const source = text || "";
+  const m1 = source.match(/\b(\d{2})[\/.-](\d{2})[\/.-](\d{2,4})\b/);
+  if (m1){
+    let year = m1[3];
+    if (year.length === 2) year = (parseInt(year, 10) >= 30 ? "19" : "20") + year;
+    return `${m1[1]}/${m1[2]}/${year}`;
+  }
+  const compact = normalize(source).replace(/\s+/g, "");
+  const m2 = compact.match(/(\d{2})(\d{2})(\d{2,4})/);
+  if (m2){
+    let year = m2[3];
+    if (year.length === 2) year = (parseInt(year, 10) >= 30 ? "19" : "20") + year;
+    const mm = parseInt(m2[2], 10);
+    const dd = parseInt(m2[1], 10);
+    if (mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) return `${m2[1]}/${m2[2]}/${year}`;
+  }
+  return "";
+}
+
+function parseDatesFromLine(text){
+  const source = text || "";
+  const out = [];
+  const rx = /\b(\d{2})[\/.-](\d{2})[\/.-](\d{2,4})\b/g;
+  let m;
+  while ((m = rx.exec(source))){
+    let year = m[3];
+    if (year.length === 2) year = (parseInt(year, 10) >= 30 ? "19" : "20") + year;
+    out.push(`${m[1]}/${m[2]}/${year}`);
+  }
+  return out.filter(isLikelyValidDate);
+}
+
+function extractBirthDateFromDocument(lineObjs, preferredDate){
+  if (isLikelyValidDate(preferredDate || "")) return preferredDate;
+
+  let best = { value: "", score: -Infinity };
+  for (let i = 0; i < lineObjs.length; i++){
+    const line = lineObjs[i].raw;
+    const canon = canonicalOCRLine(line);
+    const prev = i > 0 ? canonicalOCRLine(lineObjs[i - 1].raw) : "";
+    const dates = parseDatesFromLine(line);
+    if (!dates.length) continue;
+
+    let score = 0;
+    if (/NACIMIENTO|DATE OF BIRTH|BIRTH/.test(canon) || /NACIMIENTO|DATE OF BIRTH|BIRTH/.test(prev)) score += 6;
+    if (/VALIDEZ|CADUCIDAD|EXPIRY|EXPIRES/.test(canon) || /VALIDEZ|CADUCIDAD|EXPIRY|EXPIRES/.test(prev)) score -= 7;
+    if (/EXPEDIC|EMISION|ISSUE/.test(canon) || /EXPEDIC|EMISION|ISSUE/.test(prev)) score -= 6;
+    if (/NAC\b/.test(canon)) score += 2;
+
+    const value = dates[0];
+    if (score > best.score) best = { value, score };
+  }
+
+  if (best.value && best.score > 0) return best.value;
+  return "";
+}
+
+function looksLikePersonNameLine(text){
+  const v = cleanLineForField(text || "");
+  if (!v || /\d/.test(v) || looksLikeMRZ(v)) return false;
+  const words = v.split(/\s+/).filter(Boolean);
+  if (!words.length || words.length > 5) return false;
+  return words.every(word => /^[A-ZÁÉÍÓÚÜÑ][A-ZÁÉÍÓÚÜÑa-záéíóúüñ'-]*$/.test(word));
+}
+
+function splitLikelyParentNames(text){
+  const cleaned = cleanLineForField(text || "").replace(/\s{2,}/g, " ").trim();
+  if (!cleaned || /\d/.test(cleaned)) return [];
+
+  const direct = cleaned.split(/\s+(?:y|e)\s+/i).map(s => s.trim()).filter(Boolean);
+  if (direct.length >= 2 && direct.every(isLikelyValidName)) return direct.slice(0, 2);
+
+  const words = cleaned.split(/\s+/).filter(Boolean);
+  const tokenScore = part => {
+    const toks = part.split(/\s+/).filter(Boolean);
+    if (!toks.length || !NOMBRES_SET || !NOMBRES_SET.size) return 0;
+    let hits = 0;
+    for (const tok of toks){
+      if (NOMBRES_SET.has(normalize(tok))) hits++;
+    }
+    return hits;
+  };
+
+  if (words.length >= 2 && words.length <= 6 && NOMBRES_SET && NOMBRES_SET.size){
+    let best = { score: -1, parts: [] };
+    for (let cut = 1; cut < words.length; cut++){
+      const left = words.slice(0, cut).join(" ");
+      const right = words.slice(cut).join(" ");
+      const scoreLeft = tokenScore(left);
+      const scoreRight = tokenScore(right);
+      if (!scoreLeft || !scoreRight) continue;
+      const penalty = Math.abs(words.slice(0, cut).length - words.slice(cut).length) > 2 ? 1 : 0;
+      const score = scoreLeft + scoreRight - penalty;
+      if (score > best.score) best = { score, parts: [left, right] };
+    }
+    if (best.parts.length === 2 && best.parts.every(isLikelyValidName)) return best.parts;
+  }
+
+  if (words.length >= 2 && words.length <= 4 && words.every(w => /^[A-ZÁÉÍÓÚÜÑ][A-Za-zÁÉÍÓÚÜÑáéíóúüñ'-]*$/.test(w))){
+    if (words.length === 2) return [words[0], words[1]];
+    if (words.length === 3) return [words[0], words.slice(1).join(" ")];
+    if (words.length === 4) return [words.slice(0,2).join(" "), words.slice(2).join(" ")];
+  }
+  return [];
+}
+
+function knownNameTokenScore(text){
+  const tokens = cleanLineForField(text || "")
+    .split(/\s+/)
+    .map(tok => normalize(tok))
+    .filter(Boolean);
+  if (!tokens.length || !NOMBRES_SET || !NOMBRES_SET.size) return 0;
+  let hits = 0;
+  for (const tok of tokens){
+    if (NOMBRES_SET.has(tok)) hits++;
+  }
+  return hits;
+}
+
+function allTokensLookLikeKnownNames(text){
+  const tokens = cleanLineForField(text || "")
+    .split(/\s+/)
+    .map(tok => normalize(tok))
+    .filter(Boolean);
+  if (!tokens.length) return false;
+  if (!NOMBRES_SET || !NOMBRES_SET.size) return tokens.every(tok => tok.length >= 2 && tok.length <= 20);
+  return tokens.every(tok => NOMBRES_SET.has(tok));
+}
+
+function splitCompactKnownNames(text, maxParts = 3){
+  const compact = normalize(text || "").replace(/[^A-ZÑ]/g, "");
+  if (!compact || compact.length < 2) return [];
+  if (!NOMBRES_SET || !NOMBRES_SET.size) return [];
+
+  const memo = new Map();
+  const solve = (pos, partsLeft) => {
+    const key = `${pos}:${partsLeft}`;
+    if (memo.has(key)) return memo.get(key);
+    if (pos === compact.length) return [];
+    if (partsLeft === 0) return null;
+
+    let best = null;
+    const maxLen = Math.min(compact.length, pos + 14);
+    for (let end = pos + 2; end <= maxLen; end++){
+      const tok = compact.slice(pos, end);
+      if (!NOMBRES_SET.has(tok)) continue;
+      const rest = solve(end, partsLeft - 1);
+      if (rest === null) continue;
+      const candidate = [tok, ...rest];
+      if (!best || candidate.join("").length > best.join("").length) best = candidate;
+      if (end === compact.length) break;
+    }
+    memo.set(key, best);
+    return best;
+  };
+
+  for (let parts = 1; parts <= maxParts; parts++){
+    const res = solve(0, parts);
+    if (res && res.length) return res;
+  }
+  return [];
+}
+
+function splitCompactParentBlock(text){
+  const tokens = splitCompactKnownNames(text, 4);
+  if (!tokens.length) return [];
+  if (tokens.length === 2) return [tokens[0], tokens[1]];
+  if (tokens.length === 3) return [tokens[0], `${tokens[1]} ${tokens[2]}`];
+  if (tokens.length === 4) return [`${tokens[0]} ${tokens[1]}`, `${tokens[2]} ${tokens[3]}`];
+  return [];
+}
+
+function normalizeNameChunk(text, allowUnknown = false){
+  const chunk = cleanLineForField(text || "").replace(/\s{2,}/g, " ").trim();
+  if (!chunk || /\d/.test(chunk)) return "";
+
+  const words = chunk.split(/\s+/).filter(Boolean);
+  const built = [];
+
+  for (const word of words){
+    const simple = word.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ'-]/g, "");
+    if (!simple) continue;
+    const segmented = splitCompactKnownNames(simple, 3);
+    if (segmented.length){
+      built.push(...segmented.map(tcase));
+      continue;
+    }
+    if (allTokensLookLikeKnownNames(simple) || allowUnknown){
+      built.push(tcase(simple));
+      continue;
+    }
+    return "";
+  }
+
+  return built.join(" ").trim();
+}
+
+function extractParentNamesFromSegment(text){
+  const cleaned = cleanLineForField(text || "")
+    .replace(/[|]/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  if (!cleaned || /\d/.test(cleaned)) return "";
+
+  const rawParts = cleaned
+    .split(/\s*[\/]\s*|[0-9]+|\s+(?:y|e)\s+/i)
+    .map(part => part.trim())
+    .filter(Boolean);
+
+  const normalizedParts = rawParts
+    .map(part => normalizeNameChunk(part, true))
+    .filter(Boolean);
+  if (normalizedParts.length >= 2){
+    const pair = normalizedParts.slice(-2);
+    if (pair.every(isLikelyValidName)) return `${pair[0]} y ${pair[1]}`;
+  }
+
+  const guessed = splitLikelyParentNames(cleaned);
+  if (guessed.length === 2){
+    const left = normalizeNameChunk(guessed[0], false);
+    const right = normalizeNameChunk(guessed[1], false);
+    if (left && right) return `${left} y ${right}`;
+  }
+
+  const compact = normalize(cleaned).replace(/[^A-ZÑ0-9]/g, "");
+  const compactParts = compact.split(/[0-9]+/).filter(Boolean);
+  if (compactParts.length >= 2){
+    const left = normalizeNameChunk(compactParts[0], false);
+    const right = normalizeNameChunk(compactParts[1], false);
+    if (left && right) return `${left} y ${right}`;
+  }
+
+  if (compactParts.length === 1){
+    const pair = splitCompactParentBlock(compactParts[0]);
+    if (pair.length === 2) return `${tcase(pair[0])} y ${tcase(pair[1])}`;
+  }
+
+  return "";
+}
+
+function lineLooksLikeAddressOrPlace(text){
+  const canon = canonicalOCRLine(text || "");
+  return /DOMICILIO|ADDRESS|CALLE|C\.|AVDA|AVENIDA|PASEO|ARONA|ADEJE|MADRID|SANTA CRUZ|TENERIFE|LUGAR DE NACIMIENTO|PLACE OF BIRTH|NACIONALIDAD|NATIONALITY/.test(canon);
+}
+
+function extractParentsNearDocumentAnchor(lineObjs){
+  if (!lineObjs || !lineObjs.length) return "";
+
+  let anchor = -1;
+  for (let i = 0; i < lineObjs.length; i++){
+    const canon = canonicalOCRLine(lineObjs[i].raw);
+    if (/IDESP|DESP/.test(canon) || looksLikeMRZ(lineObjs[i].raw)){
+      anchor = i;
+      break;
+    }
+  }
+  if (anchor === -1) return "";
+
+  for (let i = Math.max(0, anchor - 3); i < anchor; i++){
+    const candidate = cleanLineForField(lineObjs[i].raw);
+    if (!candidate || lineLooksLikeAddressOrPlace(candidate)) continue;
+    const parsed = extractParentNamesFromSegment(candidate);
+    if (parsed) return parsed;
+  }
+  return "";
+}
+
+function inferParentsByContext(lineObjs, subjectName="", subjectSurnames=""){
+  if (!lineObjs || !lineObjs.length) return "";
+
+  const subjectTokens = new Set(
+    `${subjectName || ""} ${subjectSurnames || ""}`
+      .split(/\s+/)
+      .map(tok => normalize(tok))
+      .filter(Boolean)
+  );
+
+  let best = { score: -Infinity, value: "" };
+  const indexedLines = lineObjs.map((item, idx) => ({
+    idx,
+    raw: item.raw,
+    clean: cleanLineForField(item.raw),
+    canon: canonicalOCRLine(item.raw)
+  }));
+
+  let birthAnchor = -1;
+  let placeAnchor = -1;
+  let domicileAnchor = lineObjs.length;
+  let mrzAnchor = lineObjs.length;
+  let docAnchor = lineObjs.length;
+
+  for (const item of indexedLines){
+    if (birthAnchor === -1 && /NACIMIENTO|BIRTH|LUGAR DE NACIMIENTO|PLACE OF BIRTH/.test(item.canon)) birthAnchor = item.idx;
+    if (placeAnchor === -1 && /LUGAR DE NACIMIENTO|PLACE OF BIRTH/.test(item.canon)) placeAnchor = item.idx;
+    if (/DOMICILIO|ADDRESS/.test(item.canon) && domicileAnchor === lineObjs.length) domicileAnchor = item.idx;
+    if (/DOCUMENTO|DOC|N[ºO]|IDESP|IDENTIDAD/.test(item.canon) && docAnchor === lineObjs.length) docAnchor = item.idx;
+    if (looksLikeMRZ(item.raw) && mrzAnchor === lineObjs.length) mrzAnchor = item.idx;
+  }
+
+  const anchor = placeAnchor !== -1 ? placeAnchor : birthAnchor;
+  if (anchor === -1) return "";
+  const zoneStart = Math.min(lineObjs.length - 1, anchor + 1);
+  const zoneEnd = Math.min(domicileAnchor, docAnchor, mrzAnchor);
+  if (zoneEnd <= zoneStart) return "";
+
+  const windowLines = indexedLines
+    .slice(zoneStart, Math.min(zoneEnd, zoneStart + 5))
+    .filter(item => item.clean && !looksLikeMRZ(item.clean));
+
+  for (let i = 0; i < windowLines.length; i++){
+    const line = windowLines[i].clean;
+    const sameLine = extractParentNamesFromSegment(line);
+    if (sameLine){
+      const overlap = sameLine
+        .split(/\s+/)
+        .map(tok => normalize(tok))
+        .filter(tok => subjectTokens.has(tok)).length;
+      const score = 10 + knownNameTokenScore(line) - (overlap * 4);
+      if (overlap === 0 && score > best.score) best = { score, value: sameLine };
+    }
+
+    const next = windowLines[i + 1]?.clean || "";
+    if (!line || !next) continue;
+    if (!looksLikePersonNameLine(line) || !looksLikePersonNameLine(next)) continue;
+    if (!allTokensLookLikeKnownNames(line) || !allTokensLookLikeKnownNames(next)) continue;
+
+    const overlap = `${line} ${next}`
+      .split(/\s+/)
+      .map(tok => normalize(tok))
+      .filter(tok => subjectTokens.has(tok)).length;
+    if (overlap > 0) continue;
+
+    const totalHits = knownNameTokenScore(line) + knownNameTokenScore(next);
+    if (NOMBRES_SET && NOMBRES_SET.size && totalHits < 2) continue;
+
+    const pair = `${tcase(line)} y ${tcase(next)}`;
+    const score = 12 + totalHits - (overlap * 4);
+    if (score > best.score) best = { score, value: pair };
+  }
+
+  return best.score >= 10 ? best.value : "";
+}
+
+function extractParentsFromDocument(lineObjs){
+  for (let i = 0; i < lineObjs.length; i++){
+    const raw = lineObjs[i].raw;
+    const canon = canonicalOCRLine(raw);
+    if (!/HIJO DE|HIJA DE|PADRES|PARENTS?/.test(canon)) continue;
+
+    const inline = cleanLineForField(raw);
+    if (inline && inline !== raw.trim() && isLikelyValidParents(inline)) return tcase(inline);
+
+    const candidates = [];
+    for (let j = i + 1; j <= Math.min(i + 2, lineObjs.length - 1); j++){
+      const next = cleanLineForField(lineObjs[j].raw);
+      if (!looksLikePersonNameLine(next)) break;
+      candidates.push(tcase(next));
+    }
+    if (candidates.length === 1) return candidates[0];
+    if (candidates.length >= 2) return `${candidates[0]} y ${candidates[1]}`;
+  }
+
+  const joined = lineObjs.map(item => item.raw).join(" ");
+  const m = joined.match(/(?:HIJO DE|HIJA DE|PADRES?)\s*[:\-]?\s*([A-ZÁÉÍÓÚÜÑ][A-Za-zÁÉÍÓÚÜÑáéíóúüñ'\- ]{2,60})/i);
+  if (m && isLikelyValidParents(m[1])) return tcase(m[1]);
+  return "";
+}
+
+function extractDocNumberFromText(text){
+  const ns = normalize(text).replace(/\s+/g, "");
+  const matches = ns.match(/[XYZ]?\d{7,8}[A-Z]|\b[A-Z]{3}\d{6}\b|\b[A-Z0-9]{8,9}\b/g);
+  if (!matches || !matches.length) return "";
+  return matches.sort((a,b) => b.length - a.length)[0];
+}
+
+function extractSexoFromText(text){
+  const up = normalize(text);
+  if (/\bFEMENINO\b|\bMUJER\b|\bF\b/.test(up)) return "FEMENINO";
+  if (/\bMASCULINO\b|\bHOMBRE\b|\bM\b/.test(up)) return "MASCULINO";
+  return "";
+}
+
+function extractNationalityFromText(text){
+  const up = normalize(text);
+  const code = up.match(/\b[A-Z]{3}\b/);
+  if (code){
+    const label = countryCodeToLabel(code[0]);
+    if (label) return label;
+  }
+  if (/\bESPAN|ESPAÑA|ESP\b/.test(up)) return "España";
+  const m = text.match(/\b([A-ZÁÉÍÓÚÜÑ][A-ZÁÉÍÓÚÜÑa-záéíóúüñ]+(?:\s+[A-ZÁÉÍÓÚÜÑa-záéíóúüñ]+){0,2})\b/);
+  return m ? tcase(m[1]) : "";
+}
+
+function scoreLine(line, test){
+  if (!line) return 0;
+  let score = 0;
+  if (test.regex && test.regex.test(line)) score += test.points || 1;
+  if (test.uppercase && line === line.toUpperCase()) score += test.uppercase;
+  if (test.hasDigits && /\d/.test(line)) score += test.hasDigits;
+  if (test.noDigits && !/\d/.test(line)) score += test.noDigits;
+  if (test.hasComma && /,/.test(line)) score += test.hasComma;
+  if (test.hasStreet && /\b(CALLE|CL\.|C\/|AVDA|AVENIDA|PASEO|PSO|PLAZA|CTRA|ROAD|STREET|AVE)\b/i.test(line)) score += test.hasStreet;
+  if (test.notMRZ && !looksLikeMRZ(line)) score += test.notMRZ;
+  return score;
+}
+
+function bestScoredLine(lines, tests){
+  let best = null;
+  lines.forEach(line => {
+    let total = 0;
+    tests.forEach(test => { total += scoreLine(line, test); });
+    if (!best || total > best.score) best = { line, score: total };
+  });
+  return best && best.score > 0 ? best : null;
+}
+
+function inferNameParts(lineObjs){
+  const lines = lineObjs
+    .map(item => cleanLineForField(item.raw))
+    .filter(line => line && !/\d/.test(line) && !looksLikeMRZ(line) && line.split(/\s+/).length <= 6);
+
+  const surnameCandidate = bestScoredLine(lines, [
+    { regex: /^[A-ZÁÉÍÓÚÜÑ\s'-]{4,}$/, points: 2, uppercase: 2, noDigits: 1, notMRZ: 1 }
+  ]);
+  const nameCandidate = bestScoredLine(lines, [
+    { regex: /^[A-ZÁÉÍÓÚÜÑ][A-ZÁÉÍÓÚÜÑ\s'-]{1,}$/, points: 2, noDigits: 1, notMRZ: 1 }
+  ]);
+
+  return {
+    Nombre: nameCandidate ? tcase(cleanLineForField(nameCandidate.line)) : "",
+    Apellidos: surnameCandidate ? cleanLineForField(surnameCandidate.line).toUpperCase() : ""
+  };
+}
+
+function detectDocumentType(text, mrzInfo){
+  const up = normalize(text);
+  if (mrzInfo?.td3?.length || /\bPASAPORTE\b|\bPASSPORT\b/.test(up)) return "Pasaporte";
+  if (/\bNIE\b/.test(up)) return "NIE";
+  if (/\bDNI\b|\bDOCUMENTO NACIONAL DE IDENTIDAD\b/.test(up)) return "DNI";
+  if (mrzInfo?.td1?.length) return "DNI";
+  return "DNI";
+}
+
+function miniAIInterpretFields(ocrRaw){
+  const lineObjs = tokenizeOCRLines(ocrRaw);
+  const plainLines = lineObjs.map(item => item.raw);
+  const joined = plainLines.join("\n");
+  const mrzInfo = findMRZBlocks(lineObjs);
+  const mrzParsed = parseTD3Passport(mrzInfo.td3[0] || null) || parseTD1Spanish(mrzInfo.td1[0] || null) || null;
+  const names = inferNameParts(lineObjs);
+
+  const result = {
+    Nombre: mrzParsed?.Nombre || "",
+    Apellidos: mrzParsed?.Apellidos || "",
+    "Tipo de documento": mrzParsed?.["Tipo de documento"] || detectDocumentType(joined, mrzInfo),
+    "Nº Documento": mrzParsed?.["Nº Documento"] || "",
+    Sexo: mrzParsed?.Sexo || "",
+    Nacionalidad: mrzParsed?.Nacionalidad || "",
+    "Nombre de los Padres": "",
+    "Fecha de nacimiento": mrzParsed?.["Fecha de nacimiento"] || "",
+    "Lugar de nacimiento": "",
+    Domicilio: "",
+    _confidence: { ...(mrzParsed?._confidence || {}) }
+  };
+
+  const valNombre = extractLabeledValue(lineObjs, [/^NOMBRE\b/, /^GIVEN NAMES?\b/]);
+  const valApellidos = extractLabeledValue(lineObjs, [/^APELLIDOS?\b/, /^SURNAME\b/]);
+  const valDoc = extractLabeledValue(lineObjs, [/DOCUMENTO/, /^DOC\b/, /NUMERO/, /N[ºO]/]);
+  const valSexo = extractLabeledValue(lineObjs, [/^SEXO\b/, /^SEX\b/]);
+  const valNac = extractLabeledValue(lineObjs, [/^NACIONALIDAD\b/, /^NATIONALITY\b/]);
+  const valFecha = extractLabeledValue(lineObjs, [/FECHA DE NACIMIENTO/, /DATE OF BIRTH/, /^NACIMIENTO\b/, /^BIRTH\b/]);
+  const valLugar = extractLabeledValue(lineObjs, [/LUGAR DE NACIMIENTO/, /PLACE OF BIRTH/]);
+  const valDom = extractLabeledValue(lineObjs, [/^DOMICILIO\b/, /^ADDRESS\b/]);
+  const valPadres =
+    extractParentsNearDocumentAnchor(lineObjs) ||
+    inferParentsByContext(lineObjs, result.Nombre || names.Nombre, result.Apellidos || names.Apellidos) ||
+    extractParentsFromDocument(lineObjs) ||
+    extractLabeledValue(lineObjs, [/PADRES/, /HIJO DE/, /HIJA DE/, /PARENTS?/]);
+
+  if (!result.Nombre) result.Nombre = valNombre ? tcase(valNombre) : names.Nombre;
+  if (!result.Apellidos) result.Apellidos = (valApellidos || names.Apellidos).toUpperCase();
+  if (!result["Nº Documento"]) result["Nº Documento"] = extractDocNumberFromText(valDoc || joined);
+  if (!result.Sexo) result.Sexo = extractSexoFromText(valSexo || joined);
+  if (!result.Nacionalidad) result.Nacionalidad = extractNationalityFromText(valNac || joined);
+  result["Fecha de nacimiento"] = extractBirthDateFromDocument(lineObjs, result["Fecha de nacimiento"] || valFecha || "");
+  if (!result["Lugar de nacimiento"]){
+    const lugarHit = valLugar || bestScoredLine(plainLines.map(cleanLineForField), [
+      { regex: /.{4,}/, points: 1, noDigits: 1, notMRZ: 1 },
+      { regex: /\b(MADRID|BARCELONA|VALENCIA|SEVILLA|MALAGA|MURCIA|TENERIFE|PALMAS|LONDON|PARIS|ROME)\b/i, points: 3 }
+    ])?.line || "";
+    result["Lugar de nacimiento"] = lugarHit ? tcase(lugarHit) : "";
+  }
+  if (!result.Domicilio){
+    const domHit = valDom || bestScoredLine(plainLines.map(cleanLineForField), [
+      { regex: /.{8,}/, points: 1, notMRZ: 1 },
+      { hasStreet: 4, hasDigits: 1, hasComma: 1 }
+    ])?.line || "";
+    result.Domicilio = domHit ? tcase(domHit) : "";
+  }
+  if (valPadres) result["Nombre de los Padres"] = tcase(valPadres);
+
+  const ensureConfidence = (key, value, fallback) => {
+    if (result._confidence[key] == null) result._confidence[key] = value ? fallback : 0;
+  };
+
+  ensureConfidence("Tipo de documento", result["Tipo de documento"], 0.7);
+  ensureConfidence("Nº Documento", result["Nº Documento"], 0.8);
+  ensureConfidence("Sexo", result.Sexo, 0.8);
+  ensureConfidence("Nacionalidad", result.Nacionalidad, 0.75);
+  ensureConfidence("Fecha de nacimiento", result["Fecha de nacimiento"], 0.8);
+  ensureConfidence("Nombre", result.Nombre, 0.62);
+  ensureConfidence("Apellidos", result.Apellidos, 0.65);
+  ensureConfidence("Lugar de nacimiento", result["Lugar de nacimiento"], 0.55);
+  ensureConfidence("Domicilio", result.Domicilio, 0.58);
+  ensureConfidence("Nombre de los Padres", result["Nombre de los Padres"], 0.62);
+
+  return result;
+}
+
+function sanitizeParsedFieldValue(key, value){
+  const raw = (value || "").toString().trim();
+  if (!raw) return "";
+
+  let cleaned = raw
+    .replace(/[|¦]/g, " ")
+    .replace(/[<>]{2,}/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  if (key === "Nombre" || key === "Apellidos" || key === "Nombre de los Padres" || key === "Lugar de nacimiento"){
+    cleaned = cleaned
+      .replace(/[0-9]/g, " ")
+      .replace(/\b(?:ESP|IDESP|DNI|NIE|PASSPORT|P|CAN|CARD|DOCUMENTO|IDENTIDAD)\b/gi, " ")
+      .replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s'\-]/g, " ")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+  }
+
+  if (key === "Domicilio"){
+    cleaned = cleaned
+      .replace(/\b(?:IDESP|ESP|REPUBLICA|NATIONALITY|SEX|SEXO|DATE OF BIRTH|FECHA DE NACIMIENTO|APELLIDOS|NOMBRE)\b/gi, " ")
+      .replace(/[<>]/g, " ")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+  }
+
+  if (key === "Nº Documento"){
+    cleaned = normalizeDocNumber(cleaned);
+  }
+
+  if (key === "Fecha de nacimiento"){
+    cleaned = extractDateFromText(cleaned) || cleaned;
+  }
+
+  if (key === "Sexo"){
+    const sx = extractSexoFromText(cleaned);
+    cleaned = sx || "";
+  }
+
+  if (key === "Nacionalidad"){
+    cleaned = extractNationalityFromText(cleaned) || cleaned;
+  }
+
+  return cleaned.replace(/\s{2,}/g, " ").trim();
+}
+
+function sanitizeParsedObjectFields(data){
+  if (!data || typeof data !== "object") return data;
+  const keys = [
+    "Nombre",
+    "Apellidos",
+    "Tipo de documento",
+    "Nº Documento",
+    "Sexo",
+    "Nacionalidad",
+    "Nombre de los Padres",
+    "Fecha de nacimiento",
+    "Lugar de nacimiento",
+    "Domicilio"
+  ];
+  const out = { ...data, _flags: { ...(data._flags || {}) } };
+  keys.forEach(key => {
+    if (out[key] == null) return;
+    out[key] = sanitizeParsedFieldValue(key, out[key]);
+  });
+  return out;
+}
+
+function isLikelyValidName(value){
+  const v = (value || "").trim();
+  if (v.length < 2 || /\d/.test(v)) return false;
+  const words = v.split(/\s+/).filter(Boolean);
+  if (words.length < 1 || words.length > 4) return false;
+  return words.every(word => /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ'-]{2,20}$/.test(word));
+}
+
+function isLikelyValidPlace(value){
+  const v = (value || "").trim();
+  if (!v || /\d/.test(v)) return false;
+  const words = v.replace(/,/g, " ").split(/\s+/).filter(Boolean);
+  if (words.length < 1 || words.length > 10) return false;
+  return words.every(word => /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ'-]{2,24}$/.test(word));
+}
+
+function isLikelyValidSurname(value){
+  const v = (value || "").trim();
+  if (v.length < 2 || /\d/.test(v)) return false;
+  const words = v.split(/\s+/).filter(Boolean);
+  if (words.length < 1 || words.length > 3) return false;
+  return words.every(word => /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ'-]{2,20}$/.test(word));
+}
+
+function isLikelyValidParents(value){
+  const v = (value || "").trim();
+  if (!v || /\d/.test(v)) return false;
+  const words = v.split(/\s+/).filter(Boolean);
+  if (words.length < 1 || words.length > 8) return false;
+  return words.every(word => /^(y|e|[A-Za-zÁÉÍÓÚÜÑáéíóúüñ'-]{1,20})$/i.test(word));
+}
+
+function isLikelyValidDoc(value){
+  const v = normalizeDocNumber(value);
+  return /^[A-Z]?\d{5,8}[A-Z]$/.test(v);
+}
+
+function isLikelyValidDate(value){
+  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(value || "")) return false;
+  const dd = parseInt(value.slice(0,2), 10);
+  const mm = parseInt(value.slice(3,5), 10);
+  return dd >= 1 && dd <= 31 && mm >= 1 && mm <= 12;
+}
+
+function isLikelyValidNationality(value){
+  const v = tcase((value || "").trim());
+  if (!v) return false;
+  if (v === "España") return true;
+  if (v.length < 5 || v.length > 24) return false;
+  return /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s'-]+$/.test(v);
+}
+
+function isLikelyValidAddress(value){
+  const v = (value || "").trim();
+  if (v.length < 6 || v.length > 90 || looksLikeMRZ(v)) return false;
+  if (/(<|IDESP|PASSPORT|NATIONALITY|DATE OF BIRTH)/i.test(v)) return false;
+  return true;
+}
+
+function mergeParsedWithMiniAI(parsed, ai){
+  const merged = sanitizeParsedObjectFields({
+    ...parsed,
+    _flags: { ...(parsed._flags || {}) }
+  });
+
+  const mergeField = (key, flagKey, threshold = 0.6, format, validator) => {
+    const current = sanitizeParsedFieldValue(key, merged[key] || "");
+    const candidate = sanitizeParsedFieldValue(key, ai[key] || "");
+    const confidence = ai._confidence?.[key] || 0;
+    const normalizedCandidate = format ? format(candidate) : candidate;
+    const candidateLooksGood = validator ? validator(normalizedCandidate) : true;
+    const currentLooksBad = validator ? !validator(current) : false;
+    const shouldReplace = !current || (flagKey && merged._flags[flagKey]) || (currentLooksBad && confidence >= threshold);
+    if (!candidate || !candidateLooksGood || !shouldReplace) return;
+    merged[key] = normalizedCandidate;
+    if (flagKey) merged._flags[flagKey] = confidence < threshold;
+  };
+
+  mergeField("Nombre", "Nombre", 0.7, value => tcase(value), isLikelyValidName);
+  mergeField("Apellidos", "Apellidos", 0.7, value => value.toUpperCase(), isLikelyValidName);
+  mergeField("Nº Documento", null, 0.75, value => value.toUpperCase(), isLikelyValidDoc);
+  mergeField("Sexo", null, 0.8);
+  mergeField("Nacionalidad", null, 0.7, value => tcase(value), isLikelyValidNationality);
+  mergeField("Nombre de los Padres", "Padres", 0.55, value => tcase(value), isLikelyValidParents);
+  mergeField("Fecha de nacimiento", null, 0.75, null, isLikelyValidDate);
+  mergeField("Lugar de nacimiento", "Lugar", 0.6, value => tcase(value), isLikelyValidPlace);
+  mergeField("Domicilio", "Domicilio", 0.6, value => tcase(value), isLikelyValidAddress);
+
+  const aiBirth = sanitizeParsedFieldValue("Fecha de nacimiento", ai["Fecha de nacimiento"] || "");
+  const aiBirthConf = ai._confidence?.["Fecha de nacimiento"] || 0;
+  if (isLikelyValidDate(aiBirth) && aiBirthConf >= 0.88 && merged["Fecha de nacimiento"] !== aiBirth){
+    merged["Fecha de nacimiento"] = aiBirth;
+  }
+
+  const aiDocType = sanitizeParsedFieldValue("Tipo de documento", ai["Tipo de documento"] || "");
+  const aiDocConf = ai._confidence?.["Tipo de documento"] || 0;
+  if (
+    (!merged["Tipo de documento"] && aiDocType) ||
+    (aiDocConf >= 0.7 && aiDocType && merged["Tipo de documento"] === "DNI" && aiDocType !== "DNI")
+  ){
+    merged["Tipo de documento"] = aiDocType;
+  } else if (!merged["Tipo de documento"]) {
+    merged["Tipo de documento"] = "DNI";
+  }
+  return merged;
+}
+
+// ---------- OCR cliente (Tesseract.js) ----------
+function setOCRStatus(msg, isBusy=false){
+  const badge = document.getElementById('ocrStatus');
+  const btn = document.getElementById('readAnalyze');
+  if (badge) badge.textContent = msg;
+  if (btn){
+    btn.disabled = isBusy;
+    btn.style.opacity = isBusy ? "0.75" : "1";
+    btn.style.cursor = isBusy ? "wait" : "pointer";
+  }
+}
+
+function loadImage(url){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("No se ha podido leer la imagen."));
+    img.src = url;
+  });
+}
+
+async function optimizeImageForOCR(file){
+  const url = URL.createObjectURL(file);
+  try{
+    const img = await loadImage(url);
+    const longestSide = Math.max(img.naturalWidth || img.width || 0, img.naturalHeight || img.height || 0);
+    const scale = longestSide > 0 ? Math.max(1, Math.min(2.2, 1800 / longestSide)) : 1;
+    const width = Math.max(1, Math.round((img.naturalWidth || img.width) * scale));
+    const height = Math.max(1, Math.round((img.naturalHeight || img.height) * scale));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) throw new Error("No se ha podido preparar la imagen.");
+
+    ctx.filter = "grayscale(1) contrast(1.45) brightness(1.08)";
+    ctx.drawImage(img, 0, 0, width, height);
+    return canvas;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+function cropCanvasRegion(sourceCanvas, topRatio, heightRatio){
+  const srcW = sourceCanvas.width;
+  const srcH = sourceCanvas.height;
+  const top = Math.max(0, Math.floor(srcH * topRatio));
+  const height = Math.max(1, Math.min(srcH - top, Math.floor(srcH * heightRatio)));
+  const canvas = document.createElement('canvas');
+  canvas.width = srcW;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) throw new Error("No se ha podido recortar la imagen.");
+  ctx.drawImage(sourceCanvas, 0, top, srcW, height, 0, 0, srcW, height);
+  return canvas;
+}
+
+async function ensureBetterOCR(){
+  if (betterOCRPromise) return betterOCRPromise;
+  betterOCRPromise = (async () => {
+    const engine = await Ocr.create({
+      models: OCR_MODELS,
+      isDebug: false
+    });
+    return engine;
+  })();
+  try{
+    return await betterOCRPromise;
+  } catch (err){
+    betterOCRPromise = null;
+    throw err;
+  }
+}
+
+function flattenBetterOCRResult(result){
+  if (Array.isArray(result)){
+    const text = result
+      .map(line => typeof line?.text === "string" ? line.text : "")
+      .filter(Boolean)
+      .join("\n");
+    return cleanupOCRText(text);
+  }
+  if (typeof result === "string") return cleanupOCRText(result);
+  if (result?.text) return cleanupOCRText(result.text);
+  if (Array.isArray(result?.texts)){
+    const text = result.texts
+      .map(line => typeof line?.text === "string" ? line.text : "")
+      .filter(Boolean)
+      .join("\n");
+    if (text) return cleanupOCRText(text);
+  }
+  const blocks = Array.isArray(result?.blocks) ? result.blocks : [];
+  const text = blocks.map(block => block?.text || "").filter(Boolean).join("\n");
+  return cleanupOCRText(text);
+}
+
+async function extractOCRWithBetterEngine(preparedCanvas){
+  setOCRStatus("OCR: PaddleOCR 10%", true);
+  const engine = await ensureBetterOCR();
+  const blob = await new Promise((resolve, reject) => {
+    preparedCanvas.toBlob(out => out ? resolve(out) : reject(new Error("No se ha podido preparar PNG.")), "image/png");
+  });
+  const imageUrl = URL.createObjectURL(blob);
+  setOCRStatus("OCR: PaddleOCR 45%", true);
+  try{
+    const result = await engine.detect(imageUrl);
+    setOCRStatus("OCR: PaddleOCR 90%", true);
+    return flattenBetterOCRResult(result);
+  } finally {
+    URL.revokeObjectURL(imageUrl);
+  }
+}
+
+function cleanupOCRText(text){
+  return (text || "")
+    .replace(/\r/g, "\n")
+    .replace(/[^\S\n]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+async function extractOCRFromImageFile(file){
+  if (!file) return;
+  if (!file.type.startsWith('image/')){
+    alert("Selecciona una imagen del DNI.");
+    return "";
+  }
+  const source = await optimizeImageForOCR(file);
+  return await extractOCRWithBetterEngine(source);
+}
+
+async function runOCRFromFile(file){
+  if (ocrRunning) return;
+
+  ocrRunning = true;
+  setOCRStatus("Preparando imagen...", true);
+  try{
+    const text = await extractOCRFromImageFile(file);
+    if (!text){
+      alert("El OCR no ha devuelto texto legible.");
+      return;
+    }
+    await processOCR(text);
+    setOCRStatus("OCR completado", false);
+  }catch(err){
+    console.error("Error OCR:", err);
+    alert("No se ha podido leer el DNI con OCR.");
+    setOCRStatus("OCR no disponible", false);
+  } finally {
+    ocrRunning = false;
+    ocrPhaseLabel = "";
+    ocrPhaseBase = 0;
+    ocrPhaseSpan = 1;
+    setOCRStatus(document.getElementById('ocrStatus')?.textContent || "OCR listo para imagen", false);
+  }
+}
+
+async function runOCRBatch(files){
+  const allFiles = Array.from(files || []);
+  if (!allFiles.length) return;
+  if (ocrRunning) return;
+
+  if (batchDocumentsProcessed >= 10){
+    alert("Ya has añadido 10 documentos al lote. Limpia el área de texto si quieres empezar otro lote.");
+    return;
+  }
+
+  const remaining = 10 - batchDocumentsProcessed;
+  if (allFiles.length > remaining){
+    alert(`Solo se procesarán ${remaining} documento(s) más para completar el lote de 10.`);
+  }
+  const list = allFiles.slice(0, remaining);
+  if (!list.length) return;
+
+  ocrRunning = true;
+
+  try{
+    for (let i = 0; i < list.length; i++){
+      const file = list[i];
+      const batchIndex = batchDocumentsProcessed + 1;
+      setOCRStatus(`Lote ${batchIndex}/10: preparando`, true);
+      const ocr = await extractOCRFromImageFile(file);
+      const parsed = await parseOCRToFields(ocr || "");
+      appendBatchResult(batchIndex, file.name, ocr || "", parsed);
+      batchDocumentsProcessed += 1;
+      setOCRStatus(`Lote ${batchDocumentsProcessed}/10: completado`, true);
+    }
+    setOCRStatus(`Lote acumulado: ${batchDocumentsProcessed}/10`, false);
+  } catch (err){
+    console.error("Error OCR lote:", err);
+    alert("No se ha podido procesar el lote de documentos.");
+    setOCRStatus("OCR lote no disponible", false);
+  } finally {
+    ocrRunning = false;
+    ocrPhaseLabel = "";
+    ocrPhaseBase = 0;
+    ocrPhaseSpan = 1;
+    setOCRStatus(document.getElementById('ocrStatus')?.textContent || "OCR listo para imagen", false);
+  }
+}
+
+// ---------- UI ----------
+function validateField(el){
+  if (!el) return;
+  const value = (el.value || "").trim();
+  let ok = false;
+
+  if (el.tagName === "INPUT" || el.tagName === "TEXTAREA"){
+    // mínimo 2 caracteres para considerarlo "bien" (borde verde)
+    ok = value.length >= 2;
+  } else if (el.tagName === "SELECT"){
+    // selects: basta con que tenga algo elegido
+    ok = value !== "";
+  }
+
+  el.classList.toggle("valid", ok);
+  el.classList.toggle("invalid", !ok);
+}
+
+function validateAll(){
+  ["Nombre","Apellidos","Tipo","Numero","Sexo","Nacionalidad","Padres","Nacimiento","Lugar","Domicilio","Telefono","Condicion"]
+    .forEach(id=>{
+      const el = document.getElementById(id);
+      if (!el) return;
+      validateField(el);
+    });
+}
+function updateCount(){
+  document.getElementById('countF').textContent = String(expediente.filiaciones.length);
+  renderLista();
+}
+function renderLista(){
+  const ul = document.getElementById('listaF');
+  ul.innerHTML = "";
+  expediente.filiaciones.forEach((f,i)=>{
+    const li = document.createElement('li');
+    const label = `${i+1}. ${f.Apellidos || '(sin apellidos)'}${f.Nombre ? ', '+f.Nombre : ''}`;
+    li.textContent = label;
+    const btn = document.createElement('button');
+    btn.className = "btn secondary";
+    btn.textContent = "Editar";
+    btn.onclick = ()=> {
+      fillFormFromParsed(f);
+      ["Telefono","Condicion"].forEach(id=>{
+        const el=document.getElementById(id);
+        if (id==="Telefono" && f["Teléfono"]!=null) el.value = f["Teléfono"];
+        if (id==="Condicion" && f["Condición"]!=null) el.value = f["Condición"];
+      });
+      expediente.filiaciones.splice(i,1);
+      updateCount();
+    };
+    li.appendChild(btn);
+    ul.appendChild(li);
+  });
+}
+function getFormAsFiliacion(){
+  return {
+    "Nombre": document.getElementById('Nombre').value,
+    "Apellidos": (document.getElementById('Apellidos').value||"").toUpperCase(),
+    "Tipo de documento": document.getElementById('Tipo').value,
+    "Nº Documento": document.getElementById('Numero').value,
+    "Sexo": document.getElementById('Sexo').value,
+    "Nacionalidad": document.getElementById('Nacionalidad').value,
+    "Nombre de los Padres": document.getElementById('Padres').value,
+    "Fecha de nacimiento": document.getElementById('Nacimiento').value,
+    "Lugar de nacimiento": document.getElementById('Lugar').value,
+    "Domicilio": document.getElementById('Domicilio').value,
+    "Teléfono": document.getElementById('Telefono').value,
+    "Condición": document.getElementById('Condicion').value
+  };
+}
+function fillFormFromParsed(p){
+  if(p.Nombre!=null)  document.getElementById('Nombre').value = p.Nombre;
+  if(p.Apellidos!=null) document.getElementById('Apellidos').value = p.Apellidos;
+  if(p["Tipo de documento"]!=null) document.getElementById('Tipo').value = p["Tipo de documento"];
+  if(p["Nº Documento"]!=null) document.getElementById('Numero').value = p["Nº Documento"];
+  if(p.Sexo!=null) document.getElementById('Sexo').value = p.Sexo;
+  if(p.Nacionalidad!=null) document.getElementById('Nacionalidad').value = p.Nacionalidad;
+  if(p["Nombre de los Padres"]!=null) document.getElementById('Padres').value = p["Nombre de los Padres"];
+  if(p["Fecha de nacimiento"]!=null) document.getElementById('Nacimiento').value = p["Fecha de nacimiento"];
+  if(p["Lugar de nacimiento"]!=null) document.getElementById('Lugar').value = p["Lugar de nacimiento"];
+  if(p.Domicilio!=null) document.getElementById('Domicilio').value = p.Domicilio;
+
+  for (const id of ['Nombre','Apellidos','Padres','Lugar','Domicilio']){
+    document.getElementById(id)?.classList.remove('uncertain');
+  }
+  if (p._flags){
+    if (p._flags.Nombre) document.getElementById('Nombre')?.classList.add('uncertain');
+    if (p._flags.Apellidos) document.getElementById('Apellidos')?.classList.add('uncertain');
+    if (p._flags.Padres) document.getElementById('Padres')?.classList.add('uncertain');
+    if (p._flags.Lugar) document.getElementById('Lugar')?.classList.add('uncertain');
+    if (p._flags.Domicilio) document.getElementById('Domicilio')?.classList.add('uncertain');
+  }
+
+  validateAll();
+}
+function clearFormOnly(){
+  ["Nombre","Apellidos","Tipo","Numero","Sexo","Nacionalidad","Padres","Nacimiento","Lugar","Domicilio","Telefono","Condicion"]
+    .forEach(id=>{
+      const el=document.getElementById(id);
+      if (el){ el.value=""; el.classList.remove('uncertain'); }
+    });
+  const ta = document.getElementById('Doc');
+  if (ta) ta.value = "";
+  batchDocumentsProcessed = 0;
+  expediente.doc = "";
+  updateCount(); validateAll();
+}
+async function ensureLocalFieldExtractor(){
+  if (!ENABLE_HEAVY_LOCAL_AI) throw new Error("IA pesada desactivada en este dispositivo.");
+  if (localFieldExtractorPromise) return localFieldExtractorPromise;
+  localFieldExtractorPromise = (async () => {
+    env.allowLocalModels = false;
+    env.useBrowserCache = true;
+    const extractor = await pipeline("text-generation", LOCAL_FIELD_MODEL, {
+      dtype: "q4f16"
+    });
+    return extractor;
+  })();
+  try{
+    return await localFieldExtractorPromise;
+  } catch (err){
+    localFieldExtractorPromise = null;
+    throw err;
+  }
+}
+
+function buildLocalFieldPrompt(ocr){
+  const source = (ocr || "").replace(/\s+/g, " ").trim().slice(0, 1800);
+  return [
+    "Extract structured fields from OCR of a Spanish identity document or passport.",
+    "Use document semantics, not only labels.",
+    "Prefer MRZ and IDESP lines for document number, names, sex and birth date.",
+    "Use DOMICILIO for address, LUGAR DE NACIMIENTO for birthplace, HIJO/A DE for parents.",
+    "If a field is uncertain, leave it empty.",
+    "Return only these lines and nothing else:",
+    "NOMBRE=",
+    "APELLIDOS=",
+    "TIPO=",
+    "NUMERO=",
+    "SEXO=",
+    "NACIONALIDAD=",
+    "PADRES=",
+    "NACIMIENTO=",
+    "LUGAR=",
+    "DOMICILIO=",
+    `OCR: ${source}`
+  ].join("\n");
+}
+
+function buildFieldQuestionPrompt(ocr, fieldKey){
+  const source = (ocr || "").replace(/\s+/g, " ").trim().slice(0, 1800);
+  const prompts = {
+    "Nombre": "Extract only the holder given name or names. Reply with only the answer.",
+    "Apellidos": "Extract only the holder surnames. Reply with only the answer.",
+    "Nombre de los Padres": "Extract only the parents names from the HIJO/A DE section. If there are two, format as 'Nombre y Nombre'. Reply with only the answer.",
+    "Lugar de nacimiento": "Extract only the place of birth from the LUGAR DE NACIMIENTO section. Reply with only the answer.",
+    "Domicilio": "Extract only the postal address from the DOMICILIO section. Reply with only the answer."
+  };
+  return [
+    prompts[fieldKey] || "Extract only the requested field. Reply with only the answer.",
+    `OCR: ${source}`
+  ].join("\n");
+}
+
+function parseLocalFieldOutput(output){
+  const payload = getGeneratedTextPayload(output);
+  const raw = Array.isArray(payload)
+    ? String(payload[payload.length - 1]?.content || "")
+    : String(payload || "");
+  const lines = String(raw).split(/\r?\n/);
+  const map = {
+    NOMBRE: "Nombre",
+    APELLIDOS: "Apellidos",
+    TIPO: "Tipo de documento",
+    NUMERO: "Nº Documento",
+    SEXO: "Sexo",
+    NACIONALIDAD: "Nacionalidad",
+    PADRES: "Nombre de los Padres",
+    NACIMIENTO: "Fecha de nacimiento",
+    LUGAR: "Lugar de nacimiento",
+    DOMICILIO: "Domicilio"
+  };
+  const out = {};
+  for (const line of lines){
+    const m = line.match(/^\s*([A-ZÑ]+)\s*=\s*(.*)\s*$/i);
+    if (!m) continue;
+    const key = map[m[1].toUpperCase()];
+    if (!key) continue;
+    out[key] = sanitizeParsedFieldValue(key, m[2] || "");
+  }
+  return out;
+}
+
+function getGeneratedTextPayload(output){
+  if (Array.isArray(output)) return output[0]?.generated_text ?? "";
+  return output?.generated_text ?? "";
+}
+
+function extractGeneratedAnswer(output){
+  const payload = getGeneratedTextPayload(output);
+  const raw = Array.isArray(payload)
+    ? String(payload[payload.length - 1]?.content || "")
+    : String(payload || "");
+  return String(raw)
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .find(Boolean) || "";
+}
+
+async function extractFieldsWithLocalAI(ocr){
+  if (!ENABLE_HEAVY_LOCAL_AI) return {};
+  if (!(ocr || "").trim()) return {};
+  try{
+    setOCRStatus("IA local: interpretando...", true);
+    const extractor = await ensureLocalFieldExtractor();
+    const output = await extractor(buildLocalFieldPrompt(ocr), {
+      max_new_tokens: 160,
+      do_sample: false,
+      temperature: 0
+    });
+    return parseLocalFieldOutput(output);
+  } catch (err){
+    console.warn("IA local no disponible:", err);
+    return {};
+  }
+}
+
+async function extractFieldByLocalAI(ocr, fieldKey){
+  if (!ENABLE_HEAVY_LOCAL_AI) return "";
+  if (!(ocr || "").trim()) return "";
+  try{
+    const extractor = await ensureLocalFieldExtractor();
+    const output = await extractor(buildFieldQuestionPrompt(ocr, fieldKey), {
+      max_new_tokens: 64,
+      do_sample: false,
+      temperature: 0
+    });
+    const answer = sanitizeParsedFieldValue(fieldKey, extractGeneratedAnswer(output));
+    if (!answer) return "";
+    return answer;
+  } catch (err){
+    console.warn(`IA local (${fieldKey}) no disponible:`, err);
+    return "";
+  }
+}
+
+async function extractPrimaryFieldsWithLocalAI(ocr){
+  const out = {};
+  const idesp = parseSpanishIdespBlockFromOCR(ocr) || {};
+  const mrzIdentity = extractMrzIdentityFromOCR(ocr) || {};
+  const blocks = parseLabeledDocumentBlocks(ocr);
+
+  if (mrzIdentity.Nombre) out.Nombre = mrzIdentity.Nombre;
+  if (mrzIdentity.Apellidos) out.Apellidos = mrzIdentity.Apellidos;
+  if (!out.Nombre && idesp.Nombre) out.Nombre = idesp.Nombre;
+  if (!out.Apellidos && idesp.Apellidos) out.Apellidos = idesp.Apellidos;
+
+  const lineObjs = tokenizeOCRLines(ocr);
+  const fallbackNameLine = lineObjs
+    .map(item => normalizeMrzOcrLine(item.raw))
+    .find(line => !/^\d{6}[A-Z]/.test(line) && (/<<|<[A-Z]+</.test(line) || ((line.match(/K/g) || []).length >= 3)));
+  if ((!out.Nombre || !out.Apellidos) && fallbackNameLine){
+    const normalized = normalizeMrzNameLine(fallbackNameLine);
+    const parts = normalized.split("<<");
+    const surnames = cleanMRZNameChunk(parts[0]).toUpperCase();
+    const names = tcase(cleanMRZNameChunk(parts.slice(1).join(" ")));
+    if (!out.Apellidos && isLikelyValidSurname(surnames)) out.Apellidos = surnames;
+    if (!out.Nombre && isLikelyValidName(names)) out.Nombre = names;
+  }
+
+  if (blocks["Nombre de los Padres"]) out["Nombre de los Padres"] = blocks["Nombre de los Padres"];
+  if (blocks["Lugar de nacimiento"]) out["Lugar de nacimiento"] = blocks["Lugar de nacimiento"];
+  if (blocks.Domicilio) out.Domicilio = blocks.Domicilio;
+
+  return sanitizeParsedObjectFields(out);
+}
+
+function mergeFieldsWithLocalAI(base, localAI){
+  const merged = { ...base };
+  const useIfBetter = (key, validator, formatter, shouldOverride) => {
+    const current = sanitizeParsedFieldValue(key, merged[key] || "");
+    const candidate = sanitizeParsedFieldValue(key, localAI[key] || "");
+    if (!candidate) return;
+    if (validator && !validator(candidate)) return;
+    if (!shouldOverride(current, candidate)) return;
+    merged[key] = formatter ? formatter(candidate) : candidate;
+  };
+
+  useIfBetter(
+    "Nombre",
+    isLikelyValidName,
+    v => tcase(v),
+    current => {
+      const cur = normalize(current);
+      return !isLikelyValidName(current)
+        || cur === normalize("ARONA")
+        || cur === normalize("FRONTERA")
+        || cur === normalize("ADEJE")
+        || cur === normalize("SAN CRISTOBAL DE LA LAGUNA");
+    }
+  );
+  useIfBetter(
+    "Apellidos",
+    isLikelyValidSurname,
+    v => v.toUpperCase(),
+    current => !isLikelyValidSurname(current)
+  );
+  useIfBetter(
+    "Nombre de los Padres",
+    isLikelyValidParents,
+    v => tcase(v),
+    current => !isLikelyValidParents(current)
+  );
+  useIfBetter(
+    "Lugar de nacimiento",
+    isLikelyValidPlace,
+    v => tcase(v),
+    current => !isLikelyValidPlace(current)
+  );
+  useIfBetter(
+    "Domicilio",
+    isLikelyValidAddress,
+    v => tcase(v),
+    current => !current
+  );
+  return sanitizeParsedObjectFields(merged);
+}
+
+function isClearlyBadParentsValue(value){
+  const v = normalize(value || "");
+  if (!v) return false;
+  return /HIJO|HIJA|PADRE|MADRE|HIJOA|A DE|LUGAR|DOMICILIO|NACIMIENTO|IDESP|DESP/.test(v);
+}
+
+function enforceSafeOutput(parsed){
+  const safe = sanitizeParsedObjectFields({ ...parsed });
+
+  if (!isLikelyValidDoc(safe["Nº Documento"] || "")) safe["Nº Documento"] = "";
+  if (!isLikelyValidDate(safe["Fecha de nacimiento"] || "")) safe["Fecha de nacimiento"] = "";
+  if (!((safe.Sexo || "") === "MASCULINO" || (safe.Sexo || "") === "FEMENINO")) safe.Sexo = "";
+
+  const coreTrusted =
+    isLikelyValidDoc(safe["Nº Documento"] || "") &&
+    isLikelyValidDate(safe["Fecha de nacimiento"] || "");
+
+  if (!coreTrusted){
+    if (!isLikelyValidName(safe.Nombre || "") || (safe.Nombre || "").split(/\s+/).length > 3) safe.Nombre = "";
+    if (!isLikelyValidSurname(safe.Apellidos || "")) safe.Apellidos = "";
+  } else {
+    if (!isLikelyValidName(safe.Nombre || "") || (safe.Nombre || "").split(/\s+/).length > 3) safe.Nombre = "";
+    if (!isLikelyValidSurname(safe.Apellidos || "")) safe.Apellidos = "";
+  }
+
+  if (!isLikelyValidNationality(safe.Nacionalidad || "") || (safe.Nacionalidad || "").length > 24) {
+    safe.Nacionalidad = coreTrusted ? safe.Nacionalidad : "";
+  }
+
+  if (!isLikelyValidPlace(safe["Lugar de nacimiento"] || "")) {
+    safe["Lugar de nacimiento"] = "";
+  }
+  if (!isLikelyValidAddress(safe.Domicilio || "")) {
+    safe.Domicilio = "";
+  }
+  if (!isLikelyValidParents(safe["Nombre de los Padres"] || "") || isClearlyBadParentsValue(safe["Nombre de los Padres"] || "")) {
+    safe["Nombre de los Padres"] = "";
+  }
+
+  return safe;
+}
+
+async function processOCR(ocr){
+  if(!ocr.trim()){ alert("No hay texto OCR para procesar."); return; }
+  const docEl = document.getElementById('Doc');
+  if (docEl){
+    docEl.value = ocr;
+    expediente.doc = ocr;
+  }
+  const parsed = await parseOCRToFields(ocr);
+  fillFormFromParsed(parsed);
+}
+
+function parseOCRToFieldsBase(ocr){
+  const parsed = parseByRules(ocr);
+  const ai = miniAIInterpretFields(ocr);
+  const merged = sanitizeParsedObjectFields(mergeParsedWithMiniAI(parsed, ai));
+  const idespBlock = parseSpanishIdespBlockFromOCR(ocr);
+  const mrzIdentity = extractMrzIdentityFromOCR(ocr);
+  const labeledBlocks = parseLabeledDocumentBlocks(ocr);
+
+  if (idespBlock){
+    merged["Tipo de documento"] = idespBlock["Tipo de documento"] || merged["Tipo de documento"];
+    merged["Nº Documento"] = idespBlock["Nº Documento"] || merged["Nº Documento"];
+    merged["Fecha de nacimiento"] = idespBlock["Fecha de nacimiento"] || merged["Fecha de nacimiento"];
+    merged.Sexo = idespBlock.Sexo || merged.Sexo;
+    merged.Nacionalidad = idespBlock.Nacionalidad || merged.Nacionalidad;
+    if (idespBlock.Nombre) merged.Nombre = idespBlock.Nombre;
+    if (idespBlock.Apellidos) merged.Apellidos = idespBlock.Apellidos;
+  }
+
+  if (labeledBlocks["Lugar de nacimiento"]) {
+    merged["Lugar de nacimiento"] = labeledBlocks["Lugar de nacimiento"];
+  }
+  if (labeledBlocks.Domicilio) {
+    merged.Domicilio = labeledBlocks.Domicilio;
+  }
+  if (labeledBlocks["Nombre de los Padres"]) {
+    merged["Nombre de los Padres"] = labeledBlocks["Nombre de los Padres"];
+  }
+
+  if (idespBlock){
+    if (idespBlock.Nombre) merged.Nombre = idespBlock.Nombre;
+    if (idespBlock.Apellidos) merged.Apellidos = idespBlock.Apellidos;
+  }
+
+  if (mrzIdentity){
+    const currentName = normalize(merged.Nombre || "");
+    const currentSurname = normalize(merged.Apellidos || "");
+    const looksPlaceName =
+      currentName === normalize("ARONA") ||
+      currentName === normalize("FRONTERA") ||
+      currentName === normalize("ADEJE") ||
+      currentName === normalize("SANTA CRUZ DE TENERIFE") ||
+      currentName === normalize("SAN CRISTOBAL DE LA LAGUNA");
+
+    if (!isLikelyValidName(merged.Nombre || "") || looksPlaceName) merged.Nombre = mrzIdentity.Nombre;
+    if (!isLikelyValidSurname(merged.Apellidos || "") || /IDESP|MEP/.test(currentSurname)) merged.Apellidos = mrzIdentity.Apellidos;
+  }
+
+  const parsedLooksTrusted =
+    isLikelyValidDoc(parsed["Nº Documento"] || "") &&
+    isLikelyValidDate(parsed["Fecha de nacimiento"] || "");
+
+  if (parsedLooksTrusted){
+    if (!idespBlock && isLikelyValidName(parsed.Nombre || "")) merged.Nombre = sanitizeParsedFieldValue("Nombre", parsed.Nombre);
+    if (!idespBlock && isLikelyValidName(parsed.Apellidos || "")) merged.Apellidos = sanitizeParsedFieldValue("Apellidos", parsed.Apellidos);
+    if ((parsed.Sexo || "") === "MASCULINO" || (parsed.Sexo || "") === "FEMENINO") merged.Sexo = parsed.Sexo;
+    if (isLikelyValidNationality(parsed.Nacionalidad || "")) merged.Nacionalidad = sanitizeParsedFieldValue("Nacionalidad", parsed.Nacionalidad);
+  }
+
+  const mergedLooksTrusted =
+    isLikelyValidDoc(merged["Nº Documento"] || "") &&
+    isLikelyValidDate(merged["Fecha de nacimiento"] || "");
+
+  if (!mergedLooksTrusted){
+    if (!isLikelyValidName(merged.Nombre || "") || (merged.Nombre || "").split(/\s+/).length > 3) merged.Nombre = "";
+    if (!isLikelyValidName(merged.Apellidos || "") || (merged.Apellidos || "").split(/\s+/).length > 4) merged.Apellidos = "";
+    if (!isLikelyValidNationality(merged.Nacionalidad || "") || (merged.Nacionalidad || "").length > 24) merged.Nacionalidad = "";
+    if (!isLikelyValidPlace(merged["Lugar de nacimiento"] || "")) merged["Lugar de nacimiento"] = "";
+    if (!isLikelyValidAddress(merged.Domicilio || "")) merged.Domicilio = "";
+  }
+
+  if (!isLikelyValidParents(merged["Nombre de los Padres"] || "")) merged["Nombre de los Padres"] = "";
+
+  return merged;
+}
+
+async function parseOCRToFields(ocr){
+  const ruleBase = parseOCRToFieldsBase(ocr);
+  const idespBlock = parseSpanishIdespBlockFromOCR(ocr) || {};
+  const labeledBlocks = parseLabeledDocumentBlocks(ocr);
+  const aiPrimary = await extractPrimaryFieldsWithLocalAI(ocr);
+  lastAIDebug = {
+    model: LOCAL_FIELD_MODEL,
+    enabled: true,
+    primary: { ...aiPrimary }
+  };
+
+  const merged = sanitizeParsedObjectFields({
+    ...ruleBase,
+    ...aiPrimary
+  });
+
+  if (idespBlock["Tipo de documento"]) merged["Tipo de documento"] = idespBlock["Tipo de documento"];
+  if (idespBlock["Nº Documento"]) merged["Nº Documento"] = idespBlock["Nº Documento"];
+  if (idespBlock["Fecha de nacimiento"]) merged["Fecha de nacimiento"] = idespBlock["Fecha de nacimiento"];
+  if (idespBlock.Sexo) merged.Sexo = idespBlock.Sexo;
+  if (idespBlock.Nacionalidad) merged.Nacionalidad = idespBlock.Nacionalidad;
+  if (idespBlock.Nombre) merged.Nombre = idespBlock.Nombre;
+  if (idespBlock.Apellidos) merged.Apellidos = idespBlock.Apellidos;
+
+  const finalBlocks = parseLabeledDocumentBlocks(ocr);
+  if (finalBlocks["Lugar de nacimiento"] && !isLikelyValidPlace(merged["Lugar de nacimiento"] || "")) merged["Lugar de nacimiento"] = finalBlocks["Lugar de nacimiento"];
+  if (finalBlocks.Domicilio && !isLikelyValidAddress(merged.Domicilio || "")) merged.Domicilio = finalBlocks.Domicilio;
+  if (finalBlocks["Nombre de los Padres"] && (!isLikelyValidParents(merged["Nombre de los Padres"] || "") || isClearlyBadParentsValue(merged["Nombre de los Padres"] || ""))) {
+    merged["Nombre de los Padres"] = finalBlocks["Nombre de los Padres"];
+  }
+  if (!merged.Nombre && isLikelyValidName(ruleBase.Nombre || "")) merged.Nombre = ruleBase.Nombre;
+  if (!merged.Apellidos && isLikelyValidSurname(ruleBase.Apellidos || "")) merged.Apellidos = ruleBase.Apellidos;
+  if (!merged["Lugar de nacimiento"] && labeledBlocks["Lugar de nacimiento"]) merged["Lugar de nacimiento"] = labeledBlocks["Lugar de nacimiento"];
+  if (!merged.Domicilio && labeledBlocks.Domicilio) merged.Domicilio = labeledBlocks.Domicilio;
+
+  return enforceSafeOutput(merged);
+}
+
+function formatParsedFieldsBlock(parsed){
+  const fields = [
+    ["NOMBRE", parsed.Nombre || ""],
+    ["APELLIDOS", parsed.Apellidos || ""],
+    ["TIPO DE DOCUMENTO", parsed["Tipo de documento"] || ""],
+    ["Nº DOCUMENTO", parsed["Nº Documento"] || ""],
+    ["SEXO", parsed.Sexo || ""],
+    ["NACIONALIDAD", parsed.Nacionalidad || ""],
+    ["NOMBRE DE LOS PADRES", parsed["Nombre de los Padres"] || ""],
+    ["FECHA DE NACIMIENTO", parsed["Fecha de nacimiento"] || ""],
+    ["LUGAR DE NACIMIENTO", parsed["Lugar de nacimiento"] || ""],
+    ["DOMICILIO", parsed.Domicilio || ""]
+  ];
+  const baseBlock = fields.map(([label, value]) => `${label}: ${value}`).join("\n");
+  const aiDebug = lastAIDebug ? [
+    "",
+    "IA LOCAL:",
+    `MODELO: ${lastAIDebug.model || ""}`,
+    `ACTIVA: ${lastAIDebug.enabled ? "SI" : "NO"}`,
+    `IA NOMBRE: ${lastAIDebug.primary?.Nombre || ""}`,
+    `IA APELLIDOS: ${lastAIDebug.primary?.Apellidos || ""}`,
+    `IA PADRES: ${lastAIDebug.primary?.["Nombre de los Padres"] || ""}`,
+    `IA LUGAR: ${lastAIDebug.primary?.["Lugar de nacimiento"] || ""}`,
+    `IA DOMICILIO: ${lastAIDebug.primary?.Domicilio || ""}`
+  ].join("\n") : "";
+  return `${baseBlock}${aiDebug}`;
+}
+
+function appendBatchResult(index, fileName, ocr, parsed){
+  const docEl = document.getElementById('Doc');
+  if (!docEl) return;
+  const parts = [
+    `========== DOCUMENTO ${index} / ${fileName || "sin_nombre"} ==========`,
+    "OCR BRUTO:",
+    ocr || "",
+    "",
+    "PARSEO:",
+    formatParsedFieldsBlock(parsed),
+    ""
+  ];
+  const block = parts.join("\n");
+  docEl.value = docEl.value ? `${docEl.value}\n\n${block}` : block;
+  expediente.doc = docEl.value;
+}
+
+// ---------- eventos ----------
+document.getElementById('readAnalyze').addEventListener('click', ()=>{
+  const input = document.getElementById('dniImageInput');
+  if (!input) return;
+  input.value = "";
+  input.click();
+});
+document.getElementById('readAnalyzeBatch')?.addEventListener('click', ()=>{
+  const input = document.getElementById('dniBatchInput');
+  if (!input) return;
+  input.value = "";
+  input.click();
+});
+document.getElementById('dniImageInput')?.addEventListener('change', (e)=>{
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  runOCRFromFile(file);
+});
+document.getElementById('dniBatchInput')?.addEventListener('change', (e)=>{
+  const files = e.target.files;
+  if (!files || !files.length) return;
+  runOCRBatch(files);
+});
+document.getElementById('gptComparecencia').addEventListener('click', ()=>{
+  window.open('https://chatgpt.com/g/g-68fe060630348191b62c44416164a37d-comparecencia','_blank','noopener');
+});
+async function readFromClipboard(){
+  try{ const txt = await navigator.clipboard.readText(); return txt || ""; }
+  catch{ const m = prompt("Pega manualmente el texto:"); return m || ""; }
+}
+document.getElementById('integrarDoc').addEventListener('click', async ()=>{
+  const txt = await readFromClipboard();
+  if (!txt.trim()) { alert("Portapapeles vacío."); return; }
+  document.getElementById('Doc').value = txt;
+  expediente.doc = txt;
+});
+document.getElementById('addFiliacion').addEventListener('click', ()=>{
+  const f = getFormAsFiliacion();
+  const anyVal = Object.values(f).some(v => (v||"").trim()!=="");
+  if (!anyVal){ alert("Ficha vacía."); return; }
+
+  const condEl = document.getElementById('Condicion');
+  const cond = (condEl.value || "").trim();
+  if (!cond){
+    alert("Selecciona la Condición (obligatoria) antes de agregar la filiación.");
+    condEl.focus();
+    condEl.classList.add('invalid');
+    return;
+  } else {
+    condEl.classList.remove('invalid');
+    condEl.classList.add('valid');
+  }
+
+  expediente.filiaciones.push(f);
+  updateCount();
+  clearFormOnly();
+});
+document.getElementById('clearForm').addEventListener('click', clearFormOnly);
+document.getElementById('Doc').addEventListener('input', (e)=>{ expediente.doc = e.target.value; });
+document.getElementById('download').addEventListener('click', async ()=>{
+  // Si hay datos en la ficha actual, obligamos a agregarlos o limpiarlos
+  const f = getFormAsFiliacion();
+  const anyVal = Object.values(f).some(v => (v||"").trim()!=="");
+  if (anyVal){
+    alert(
+      "Tienes datos en la ficha de filiación que no has agregado al expediente.\n\n" +
+      "Pulsa 'Agregar filiación' o limpia la ficha antes de descargar."
+    );
+    return;
+  }
+
+  expediente.doc = document.getElementById('Doc').value || expediente.doc || "";
+  const data = { doc: expediente.doc, filiaciones: expediente.filiaciones };
+
+  const password = prompt("Introduce una frase de paso para cifrar el expediente (mínimo 8 caracteres):");
+  if (!password) return;
+  if (password.length < 8){
+    alert("Frase de paso demasiado corta. Usa al menos 8 caracteres.");
+    return;
+  }
+
+  try{
+    const cipherBase64 = await encryptJSON(data, password);
+    const blob = new Blob([cipherBase64], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const d = new Date(); const pad = n => String(n).padStart(2,'0');
+    const fname = `Proyecto ${pad(d.getHours())}-${pad(d.getMinutes())} ${pad(d.getDate())}_${pad(d.getMonth()+1)}_${d.getFullYear()}.enc`;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fname;
+    a.click();
+    URL.revokeObjectURL(url);
+  }catch(err){
+    console.error("Error cifrando el expediente:", err);
+    alert("No se ha podido cifrar el expediente.");
+  }
+});
+
+const btnLoadEnc = document.getElementById('loadEncrypted');
+const inputEnc   = document.getElementById('encryptedInput');
+
+if (btnLoadEnc && inputEnc){
+  btnLoadEnc.addEventListener('click', () => {
+    inputEnc.value = "";
+    inputEnc.click();
+  });
+
+  inputEnc.addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const text = (ev.target.result || "").toString().trim();
+      if (!text){
+        alert("Archivo vacío o no válido.");
+        return;
+      }
+      const password = prompt("Introduce la frase de paso para descifrar el expediente:");
+      if (!password) return;
+      try{
+        const data = await decryptJSON(text, password);
+        if (!data || typeof data !== "object"){
+          throw new Error("Formato inesperado");
+        }
+        expediente.doc = data.doc || "";
+        expediente.filiaciones = Array.isArray(data.filiaciones) ? data.filiaciones : [];
+
+        // Limpiar campos del formulario (excepto DOC)
+        ["Nombre","Apellidos","Tipo","Numero","Sexo","Nacionalidad","Padres","Nacimiento","Lugar","Domicilio","Telefono","Condicion"]
+          .forEach(id => {
+            const el = document.getElementById(id);
+            if (el){ el.value = ""; el.classList.remove("uncertain","valid","invalid"); }
+          });
+        const docEl = document.getElementById('Doc');
+        if (docEl) docEl.value = expediente.doc;
+        updateCount();
+        validateAll();
+        alert("Proyecto cifrado cargado correctamente.");
+      }catch(err){
+        console.error("Error al descifrar el expediente:", err);
+        alert("No se ha podido descifrar el expediente. Clave incorrecta o archivo dañado.");
+      }
+    };
+    reader.readAsText(file);
+  });
+}
+
+// init
+["Nombre","Apellidos","Tipo","Numero","Sexo","Nacionalidad","Padres","Nacimiento","Lugar","Domicilio","Telefono","Condicion"].forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  // Validar al salir del campo
+  el.addEventListener("blur", () => validateField(el));
+  // En selects, también al cambiar la opción
+  if (el.tagName === "SELECT"){
+    el.addEventListener("change", () => validateField(el));
+  }
+});
+
+updateCount();
+validateAll();
+initMunicipios();
+initNombres();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    const isLocalDev = location.hostname === '127.0.0.1' || location.hostname === 'localhost';
+    if (isLocalDev){
+      try{
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(reg => reg.unregister()));
+      }catch(err){
+        console.warn('SW cleanup error', err);
+      }
+
+      if (window.caches){
+        try{
+          const keys = await caches.keys();
+          await Promise.all(keys.map(key => caches.delete(key)));
+        }catch(err){
+          console.warn('Cache cleanup error', err);
+        }
+      }
+      return;
+    }
+
+    navigator.serviceWorker.register('./sw.js?v=dev2', { updateViaCache: 'none' })
+      .catch(err => console.error('SW error', err));
+  });
+}
+</script>
+</body>
+</html>
