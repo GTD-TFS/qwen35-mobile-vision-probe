@@ -287,7 +287,6 @@ h1::after{
 
 <script src="./paises_iso3.js"></script>
 <script type="module">
-import Ocr from '@gutenye/ocr-browser';
 import { PROVINCIAS_ES } from './provincias_es.js';
 
 const IS_LOCAL_DEV = location.hostname === '127.0.0.1' || location.hostname === 'localhost';
@@ -322,6 +321,11 @@ let ocrPhaseSpan = 1;
 let batchDocumentsProcessed = 0;
 let lastAIDebug = null;
 let nativeTextDetector = null;
+
+async function loadBetterOCRModule(){
+  const mod = await import('@gutenye/ocr-browser');
+  return mod?.default || mod?.Ocr || mod;
+}
 
 function toBase64(arr){
   let str = "";
@@ -2292,6 +2296,7 @@ function cropCanvasRegion(sourceCanvas, topRatio, heightRatio){
 async function ensureBetterOCR(){
   if (betterOCRPromise) return betterOCRPromise;
   betterOCRPromise = (async () => {
+    const Ocr = await loadBetterOCRModule();
     const engine = await Ocr.create({
       models: OCR_MODELS,
       isDebug: false
@@ -2396,6 +2401,11 @@ async function extractOCRWithBetterEngine(preparedCanvas){
       preparedCanvas.width = 1;
       preparedCanvas.height = 1;
     }
+  }
+  if (isMobileOCRDevice()){
+    preparedCanvas.width = 1;
+    preparedCanvas.height = 1;
+    throw new Error("Este móvil no soporta OCR local seguro en navegador. Usa un navegador compatible con TextDetector o prueba en escritorio.");
   }
   setOCRStatus("OCR: PaddleOCR 10%", true);
   const engine = await ensureBetterOCR();
