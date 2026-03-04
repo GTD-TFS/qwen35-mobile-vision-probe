@@ -321,6 +321,7 @@ let ocrPhaseBase = 0;
 let ocrPhaseSpan = 1;
 let batchDocumentsProcessed = 0;
 let lastAIDebug = null;
+let nativeTextDetector = null;
 
 function toBase64(arr){
   let str = "";
@@ -2233,6 +2234,16 @@ function isMobileOCRDevice(){
   return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || "");
 }
 
+function canUseNativeTextDetector(){
+  return typeof window !== "undefined" && typeof window.TextDetector === "function";
+}
+
+function ensureNativeTextDetector(){
+  if (!canUseNativeTextDetector()) return null;
+  if (!nativeTextDetector) nativeTextDetector = new window.TextDetector();
+  return nativeTextDetector;
+}
+
 async function optimizeImageForOCR(file){
   const url = URL.createObjectURL(file);
   try{
@@ -2333,6 +2344,30 @@ function mergeOCRTexts(parts){
   return cleanupOCRText(lines.join("\n"));
 }
 
+async function extractOCRWithNativeDetector(preparedCanvas){
+  const detector = ensureNativeTextDetector();
+  if (!detector) throw new Error("TextDetector no disponible.");
+  const upper = cropCanvasRegion(preparedCanvas, 0, 0.72);
+  const lower = cropCanvasRegion(preparedCanvas, 0.56, 0.44);
+  const canvases = [upper, lower];
+  const chunks = [];
+  for (let i = 0; i < canvases.length; i++){
+    const canvas = canvases[i];
+    setOCRStatus(i === 0 ? "OCR: nativo 35%" : "OCR: nativo 75%", true);
+    const blocks = await detector.detect(canvas);
+    const text = (blocks || [])
+      .map(block => block?.rawValue || block?.text || "")
+      .filter(Boolean)
+      .join("\n");
+    chunks.push(text);
+    canvas.width = 1;
+    canvas.height = 1;
+    await new Promise(resolve => setTimeout(resolve, 0));
+  }
+  setOCRStatus("OCR: nativo 90%", true);
+  return mergeOCRTexts(chunks);
+}
+
 async function detectCanvasWithBetterEngine(engine, canvas, progressLabel){
   if (progressLabel) setOCRStatus(progressLabel, true);
   const blob = await new Promise((resolve, reject) => {
@@ -2354,6 +2389,14 @@ async function detectCanvasWithBetterEngine(engine, canvas, progressLabel){
 }
 
 async function extractOCRWithBetterEngine(preparedCanvas){
+  if (isMobileOCRDevice() && canUseNativeTextDetector()){
+    try{
+      return await extractOCRWithNativeDetector(preparedCanvas);
+    } finally {
+      preparedCanvas.width = 1;
+      preparedCanvas.height = 1;
+    }
+  }
   setOCRStatus("OCR: PaddleOCR 10%", true);
   const engine = await ensureBetterOCR();
   const isMobile = isMobileOCRDevice();
