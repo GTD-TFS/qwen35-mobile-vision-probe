@@ -288,7 +288,6 @@ h1::after{
 <script src="./paises_iso3.js"></script>
 <script type="module">
 import Ocr from '@gutenye/ocr-browser';
-import { pipeline, env } from '@huggingface/transformers';
 import { PROVINCIAS_ES } from './provincias_es.js';
 
 const IS_LOCAL_DEV = location.hostname === '127.0.0.1' || location.hostname === 'localhost';
@@ -321,7 +320,6 @@ let ocrPhaseLabel = "";
 let ocrPhaseBase = 0;
 let ocrPhaseSpan = 1;
 let batchDocumentsProcessed = 0;
-let localFieldExtractorPromise = null;
 let lastAIDebug = null;
 
 function toBase64(arr){
@@ -2519,144 +2517,7 @@ function clearFormOnly(){
   expediente.doc = "";
   updateCount(); validateAll();
 }
-async function ensureLocalFieldExtractor(){
-  if (!ENABLE_HEAVY_LOCAL_AI) throw new Error("IA pesada desactivada en este dispositivo.");
-  if (localFieldExtractorPromise) return localFieldExtractorPromise;
-  localFieldExtractorPromise = (async () => {
-    env.allowLocalModels = false;
-    env.useBrowserCache = true;
-    const extractor = await pipeline("text-generation", LOCAL_FIELD_MODEL, {
-      dtype: "q4f16"
-    });
-    return extractor;
-  })();
-  try{
-    return await localFieldExtractorPromise;
-  } catch (err){
-    localFieldExtractorPromise = null;
-    throw err;
-  }
-}
-
-function buildLocalFieldPrompt(ocr){
-  const source = (ocr || "").replace(/\s+/g, " ").trim().slice(0, 1800);
-  return [
-    "Extract structured fields from OCR of a Spanish identity document or passport.",
-    "Use document semantics, not only labels.",
-    "Prefer MRZ and IDESP lines for document number, names, sex and birth date.",
-    "Use DOMICILIO for address, LUGAR DE NACIMIENTO for birthplace, HIJO/A DE for parents.",
-    "If a field is uncertain, leave it empty.",
-    "Return only these lines and nothing else:",
-    "NOMBRE=",
-    "APELLIDOS=",
-    "TIPO=",
-    "NUMERO=",
-    "SEXO=",
-    "NACIONALIDAD=",
-    "PADRES=",
-    "NACIMIENTO=",
-    "LUGAR=",
-    "DOMICILIO=",
-    `OCR: ${source}`
-  ].join("\n");
-}
-
-function buildFieldQuestionPrompt(ocr, fieldKey){
-  const source = (ocr || "").replace(/\s+/g, " ").trim().slice(0, 1800);
-  const prompts = {
-    "Nombre": "Extract only the holder given name or names. Reply with only the answer.",
-    "Apellidos": "Extract only the holder surnames. Reply with only the answer.",
-    "Nombre de los Padres": "Extract only the parents names from the HIJO/A DE section. If there are two, format as 'Nombre y Nombre'. Reply with only the answer.",
-    "Lugar de nacimiento": "Extract only the place of birth from the LUGAR DE NACIMIENTO section. Reply with only the answer.",
-    "Domicilio": "Extract only the postal address from the DOMICILIO section. Reply with only the answer."
-  };
-  return [
-    prompts[fieldKey] || "Extract only the requested field. Reply with only the answer.",
-    `OCR: ${source}`
-  ].join("\n");
-}
-
-function parseLocalFieldOutput(output){
-  const payload = getGeneratedTextPayload(output);
-  const raw = Array.isArray(payload)
-    ? String(payload[payload.length - 1]?.content || "")
-    : String(payload || "");
-  const lines = String(raw).split(/\r?\n/);
-  const map = {
-    NOMBRE: "Nombre",
-    APELLIDOS: "Apellidos",
-    TIPO: "Tipo de documento",
-    NUMERO: "Nº Documento",
-    SEXO: "Sexo",
-    NACIONALIDAD: "Nacionalidad",
-    PADRES: "Nombre de los Padres",
-    NACIMIENTO: "Fecha de nacimiento",
-    LUGAR: "Lugar de nacimiento",
-    DOMICILIO: "Domicilio"
-  };
-  const out = {};
-  for (const line of lines){
-    const m = line.match(/^\s*([A-ZÑ]+)\s*=\s*(.*)\s*$/i);
-    if (!m) continue;
-    const key = map[m[1].toUpperCase()];
-    if (!key) continue;
-    out[key] = sanitizeParsedFieldValue(key, m[2] || "");
-  }
-  return out;
-}
-
-function getGeneratedTextPayload(output){
-  if (Array.isArray(output)) return output[0]?.generated_text ?? "";
-  return output?.generated_text ?? "";
-}
-
-function extractGeneratedAnswer(output){
-  const payload = getGeneratedTextPayload(output);
-  const raw = Array.isArray(payload)
-    ? String(payload[payload.length - 1]?.content || "")
-    : String(payload || "");
-  return String(raw)
-    .split(/\r?\n/)
-    .map(line => line.trim())
-    .find(Boolean) || "";
-}
-
-async function extractFieldsWithLocalAI(ocr){
-  if (!ENABLE_HEAVY_LOCAL_AI) return {};
-  if (!(ocr || "").trim()) return {};
-  try{
-    setOCRStatus("IA local: interpretando...", true);
-    const extractor = await ensureLocalFieldExtractor();
-    const output = await extractor(buildLocalFieldPrompt(ocr), {
-      max_new_tokens: 160,
-      do_sample: false,
-      temperature: 0
-    });
-    return parseLocalFieldOutput(output);
-  } catch (err){
-    console.warn("IA local no disponible:", err);
-    return {};
-  }
-}
-
-async function extractFieldByLocalAI(ocr, fieldKey){
-  if (!ENABLE_HEAVY_LOCAL_AI) return "";
-  if (!(ocr || "").trim()) return "";
-  try{
-    const extractor = await ensureLocalFieldExtractor();
-    const output = await extractor(buildFieldQuestionPrompt(ocr, fieldKey), {
-      max_new_tokens: 64,
-      do_sample: false,
-      temperature: 0
-    });
-    const answer = sanitizeParsedFieldValue(fieldKey, extractGeneratedAnswer(output));
-    if (!answer) return "";
-    return answer;
-  } catch (err){
-    console.warn(`IA local (${fieldKey}) no disponible:`, err);
-    return "";
-  }
-}
+// La capa "IA LOCAL" actual es ligera y no usa modelos pesados en navegador.
 
 async function extractPrimaryFieldsWithLocalAI(ocr){
   const out = {};

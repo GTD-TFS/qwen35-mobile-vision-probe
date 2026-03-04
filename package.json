@@ -11,8 +11,7 @@
   },
   "dependencies": {
     "@gutenye/ocr-browser": "^1.4.8",
-    "@gutenye/ocr-models": "^1.4.2",
-    "@huggingface/transformers": "^3.8.1"
+    "@gutenye/ocr-models": "^1.4.2"
   },
   "devDependencies": {
     "vite": "^6.2.0"
